@@ -71,3 +71,5 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to the board in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
 
 - Testers must check layout stability: controls must not move when their own state changes.
+
+- Check states on cards: `results`/`checks` entries use state "met" when passed (anything else shows red "Not met"). Lesson 18 Nov 2026: #211 and #216 showed all checks failing because they were stored as "open" after the tester passed. Set them to met with `by` when moving to Human test.
