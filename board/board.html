@@ -41,6 +41,9 @@ a.more { text-decoration: none; }
 .hint { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
 .more:disabled { color: var(--muted); cursor: default; }
 section { flex: 1 0 250px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: color-mix(in srgb, var(--c) 7%, transparent); border-radius: 8px; padding: 10px; }
+/* Empty columns shrink so the busy ones get the room. */
+section:has(> .cards > p.empty:only-child) { flex: 0 0 150px; }
+section:has(> .cards > p.empty:only-child) .cards { opacity: .8; }
 section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .sub { font-size: .75rem; font-weight: 600; color: var(--c); text-transform: uppercase; letter-spacing: .06em; margin: -6px 0 0 18px; }
 .cards { display: flex; flex-direction: column; gap: 8px; }
