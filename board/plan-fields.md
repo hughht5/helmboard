@@ -40,15 +40,32 @@ What a click sends (through the comment sent to Claude):
 
 The page never clears `question`. Remove the field (or the entry) when you have acted, and the block goes on the next snapshot.
 
-`email` (card #1030): `{ to, subject, body }`, all strings (`to` may also be a list). Shown only on a card in the
-**Email customer** column, as To / Subject / Body with a Copy button each. Plain text: line breaks kept, never read as
-HTML. With no `email` the block says "Draft coming from the Router". There is no send button: The owner sends it himself,
-or tells the Router in chat that it may send that one. Remove `email` when the card leaves the column if you like; the
-page ignores it in other columns.
+`actions` (card #1033): the final steps the owner does himself after a card is live. Shown only on a card in the
+**Final action needed** column (it was "Email customer"; rows still saying "Email customer" show in this column).
+A list of action objects:
 
-Columns after Ship it: **Deploy complete** → **Email customer** (only cards that need a customer email) → **Done**.
-Each card in Deploy complete and Email customer has its own Archive button on the tile and in the full view; it sends
-`Card #<n>: archive.`, the same message as the full view's Archive.
+| Field | Shape | Notes |
+|---|---|---|
+| `kind` | `"email"` \| `"prod"` \| `"switch"` \| `"other"` | Sets the coloured label: Email, Run in production, Flip a setting, Other step. Anything else reads as `other`. |
+| `title` | string | Headline of the action. |
+| `detail` | string | Plain text under the headline. |
+| `email` | `{ to, subject, body }` | `email` kind: To / Subject / Body, a Copy button each. |
+| `commands` | `[ string ]` (or one string) | `prod` kind: each command in a monospace box with Copy. |
+| `expect` | string | `prod` kind: "What you should see". |
+| `setting`, `where`, `undo` | strings | `switch` kind: the setting's name, where to change it, how to undo it. |
+| `done` | boolean | Set it when the Router has recorded the step as done. Shows a tick. |
+
+Every field is plain text: line breaks kept, never read as HTML. Each action has a **Done** button that sends
+`Card #<n>: action <k> done.` (k counts from 1, in list order) through the same comment path as the owner's other words;
+the Router then sets `done: true` on that action. When every action is done the tile shows "All done" and the full
+view says the card can be archived. The per-card Archive button stays on the tile and in the full view and sends
+`Card #<n>: archive.`
+
+Back-compat: a card with no `actions` but an `email` `{ to, subject, body }` (card #1030) shows as one email action.
+With neither, the block says "Steps coming from the Router". There is no send or run button: The owner does each step
+himself, or tells the Router in chat that it may.
+
+Columns after Ship it: **Deploy complete** → **Final action needed** (only cards with a step for the owner) → **Done**.
 
 ## On the detail row (`cards/<n>/detail/full`)
 

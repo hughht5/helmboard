@@ -87,6 +87,15 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .email .emv { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; font-size: .9rem; }
 .email .emv.body { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--surface); }
 .email .enone, .email .enote { color: var(--muted); font-size: .84rem; }
+.finals { flex-basis: 100%; display: grid; gap: 10px; }
+.email h3 .achip { margin-right: 4px; }
+.email .emv.cmd { font-family: ui-monospace, Consolas, monospace; font-size: .84rem; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--bg); }
+.email .afoot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.achips { display: flex; flex-wrap: wrap; gap: 4px; }
+.achip { --k: var(--mail); font-size: .72rem; font-weight: 600; color: var(--k); border: 1px solid color-mix(in srgb, var(--k) 60%, var(--line)); background: color-mix(in srgb, var(--k) 10%, var(--surface)); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.achip.done { opacity: .6; }
+.achip.all, .allok { --k: var(--ship); color: var(--ship); }
+.allok { font-weight: 600; }
 @media (max-width: 520px) { .email .erow { grid-template-columns: 1fr auto; } .email .ek { grid-column: 1 / -1; padding: 0; } }
 .cardarch { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .cardarch button { font: inherit; font-size: .72rem; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px; cursor: pointer; }
@@ -532,7 +541,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 <script>
 const COLS = [["Backlog", "run"], ["Blocked", "stuck", "Stuck"], ["Planning", "run"], ["Plan review", "plan", "Needs you: planning"],
   ["In progress", "run"], ["Human test", "test", "Needs you: testing"], ["Ship it", "run"],
-  ["Deploy complete", "ship", "Shipped"], ["Email customer", "mail", "Needs you: send the email"], ["Done", "done", "Archived"]];
+  ["Deploy complete", "ship", "Shipped"], ["Final action needed", "mail", "Needs you: final step"], ["Done", "done", "Archived"]];
 const EMPTY = { "Plan review": "No plans waiting for you.", "Human test": "Nothing waiting for your test.", "Blocked": "Nothing is stuck." };
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -558,6 +567,9 @@ function chips(c) {
   return meta;
 }
 const WAITING = ["Plan review", "Human test", "Blocked"];
+// Card #1033: the column after Deploy complete holds any final step the owner does himself. It was "Email customer"
+// (card #1030); rows still saying that are read as this column.
+const FINAL = "Final action needed", OLD_FINAL = "Email customer";
 const AGENT_WORD = { passed: "passed", failed: "failed", unclear: "unclear", fixed: "fix proved", reproduced: "reproduced", "not-reproduced": "not reproduced" };
 function labels(meta, c) {
   (c.labels || []).forEach(l => { const t = el("span", "chip tag", l); let h = 0; for (const ch of String(l)) h = (h * 31 + ch.charCodeAt(0)) % 360; t.style.setProperty("--h", h); meta.append(t); });
@@ -612,14 +624,15 @@ function card(c) {
     b.addEventListener("keydown", e => e.stopPropagation());
     meta.append(b);
   }
+  if (c.column === FINAL) { const acts = actionsOf(c); if (acts.length) d.append(actionChips(c, acts)); }
   if (!PENDING[c.id] && ARCH_COLS.includes(c.column)) meta.append(tileArchive(c));
   d.addEventListener("click", () => { if (Date.now() - dragEnd > 400) openCard(c); });
   d.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(c); } });
   return d;
 }
-// Per-card Archive on the tiles in Deploy complete and Email customer (card #1030): asks first, then sends
+// Per-card Archive on the tiles in Deploy complete and Final action needed (cards #1030, #1033): asks first, then sends
 // the Router the same "archive." message as the full view's Archive. The page never moves the card itself.
-const ARCH_COLS = ["Deploy complete", "Email customer"];
+const ARCH_COLS = ["Deploy complete", FINAL];
 function tileArchive(c) {
   const wrap = el("span", "cardarch"), num = "#" + (c.n ?? c.id), col = colOf(c);
   ["click", "keydown", "pointerdown", "mousedown"].forEach(t => wrap.addEventListener(t, e => e.stopPropagation()));
@@ -665,6 +678,62 @@ function emailBlock(c) {
   });
   box.append(el("div", "enote", "The owner sends this himself. To have the Router send it, tell the Router in chat."));
   return box;
+}
+// Card #1033: the final steps on a card in Final action needed, from the card row's `actions`:
+// [{kind, title, detail, commands?, email?, done?}], kind "email" | "prod" | "switch" | "other".
+// An old card with only `email` reads as one email action. Every field is shown as text, never as HTML.
+const ACT_KINDS = { email: ["Email", "mail"], prod: ["Run in production", "stuck"], switch: ["Flip a setting", "test"], other: ["Other step", "done"] };
+const DONE_SENT = {};
+const sstr = v => Array.isArray(v) ? v.map(String).join(", ") : v == null ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+function actionsOf(c) {
+  let list = Array.isArray(c.actions) ? c.actions.filter(a => a && typeof a === "object") : [];
+  if (!list.length && c.email && typeof c.email === "object") list = [{ kind: "email", title: "Email the customer", email: c.email, legacy: true }];
+  return list.map(a => ({ ...a, kind: ACT_KINDS[a.kind] ? a.kind : "other" }));
+}
+const isDone = (c, a, k) => !!a.done || !!DONE_SENT[c.id + "/" + k];
+function actionChips(c, acts) {
+  const row = el("div", "achips");
+  acts.forEach((a, k) => { const t = el("span", "achip" + (isDone(c, a, k) ? " done" : ""), (isDone(c, a, k) ? "✓ " : "") + ACT_KINDS[a.kind][0]); t.style.setProperty("--k", "var(--" + ACT_KINDS[a.kind][1] + ")"); t.title = sstr(a.title); row.append(t); });
+  if (acts.every((a, k) => isDone(c, a, k))) row.append(el("span", "achip all", "All done"));
+  return row;
+}
+function copyRow(box, label, val, cls) {
+  const row = el("div", "erow"), v = el("div", "emv" + (cls || ""), val || "(empty)");
+  const b = el("button", "linkbtn", "Copy"); b.type = "button"; b.setAttribute("aria-label", "Copy " + label.toLowerCase()); b.disabled = !val;
+  b.addEventListener("click", () => copyText(val, v, b));
+  row.append(el("span", "ek", label), v, b); box.append(row);
+}
+function actionsBlock(c) {
+  const wrap = el("div", "finals"), acts = actionsOf(c), num = "#" + (c.n ?? c.id);
+  if (!acts.length) { const box = el("div", "email"); box.append(el("h3", "", "Final step"), el("div", "enone", "Steps coming from the Router")); wrap.append(box); return wrap; }
+  const all = el("div", "allok", "All done. Archive the card when you're ready."); all.hidden = !acts.every((a, k) => isDone(c, a, k));
+  acts.forEach((a, k) => {
+    const [word, tone] = ACT_KINDS[a.kind], box = el("div", "email act"); if (tone !== "mail") box.style.setProperty("--mail", "var(--" + tone + ")");
+    const h = el("h3"); h.append(el("span", "achip", word), document.createTextNode(" " + (sstr(a.title) || word))); box.append(h);
+    if (a.detail && a.kind !== "switch") box.append(el("div", "emv", sstr(a.detail)));
+    if (a.kind === "email") {
+      const e = a.email && typeof a.email === "object" ? a.email : null;
+      if (!e || !(sstr(e.to) || sstr(e.subject) || sstr(e.body))) box.append(el("div", "enone", "Draft coming from the Router"));
+      else { copyRow(box, "To", sstr(e.to)); copyRow(box, "Subject", sstr(e.subject)); copyRow(box, "Body", sstr(e.body), " body"); }
+      box.append(el("div", "enote", "The owner sends this himself. To have the Router send it, tell the Router in chat."));
+    } else if (a.kind === "prod") {
+      (Array.isArray(a.commands) ? a.commands : a.commands ? [a.commands] : []).forEach((cmd, i, l) => copyRow(box, l.length > 1 ? "Run " + (i + 1) : "Run", sstr(cmd), " cmd"));
+      if (a.expect || a.see) { box.append(el("div", "ek", "What you should see")); box.append(el("div", "emv", sstr(a.expect || a.see))); }
+    } else if (a.kind === "switch") {
+      [["Setting", a.setting], ["Where", a.where], ["Undo", a.undo]].forEach(([k2, v]) => { if (v) { const row = el("div", "erow"); row.append(el("span", "ek", k2), el("div", "emv", sstr(v))); box.append(row); } });
+      if (a.detail) box.append(el("div", "emv", sstr(a.detail)));
+    }
+    const foot = el("div", "afoot"), said = el("span", "hint");
+    const done = el("button", "linkbtn", isDone(c, a, k) ? "✓ Done" : "Done"); done.type = "button"; done.disabled = isDone(c, a, k);
+    done.setAttribute("aria-label", "Mark action " + (k + 1) + " done");
+    done.addEventListener("click", async () => {
+      done.disabled = true; await ask(c, "action " + (k + 1) + " done.", said);
+      if (said.textContent.startsWith("Sent")) { DONE_SENT[c.id + "/" + k] = 1; done.textContent = "✓ Done"; said.textContent = "Sent to the Router: “Card " + num + ": action " + (k + 1) + " done.”"; all.hidden = !acts.every((x, j) => isDone(c, x, j)); }
+      else done.disabled = false;
+    });
+    foot.append(done, said); box.append(foot); wrap.append(box);
+  });
+  wrap.append(all); return wrap;
 }
 let CM = null;
 async function ask(c, text, msg, where) {
@@ -1041,7 +1110,7 @@ function drawFacts() {
     idle(); links.append(wrap);
   }
   if (links.children.length) box.append(links);
-  if (c.column === "Email customer") box.append(emailBlock(c));
+  if (c.column === FINAL) box.append(actionsBlock(c));
 }
 // ---- Plan tab (the picture-first layout) and the pieces it shares ----
 const arr = v => Array.isArray(v) ? v : [];
@@ -1950,7 +2019,7 @@ function start(db) {
     stampNow = (shown, n) => { stamp.textContent = (shown < n ? shown + " of " + n : n) + " cards · refreshed " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
     const shown = render(all); if (shown >= 0) stampNow(shown, all.length);
   };
-  const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const rows = snap => snap.docs.map(d => { const c = { id: d.id, ...d.data() }; if (c.column === OLD_FINAL) c.column = FINAL; return c; });
   const fail = e => { clearTimeout(timer); note.hidden = false; note.textContent = "The cards stopped updating (" + (e && e.code || "error") + "). Reopen the page to reconnect."; };
   db.collection("cards").where("column", "==", "Done").orderBy("doneAt", "desc").limit(300).onSnapshot(snap => { done = rows(snap); paint(); }, fail);
   db.collection("cards").where("column", "!=", "Done").limit(1000).onSnapshot(snap => {
