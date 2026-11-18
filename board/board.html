@@ -361,6 +361,42 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 .plan .folds ol, .plan .folds ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
 .plan .folds .prose { font-size: .95rem; }
 .plan .decn .qopt.chosen:disabled { opacity: 1; }
+/* Plan widgets (#1017) */
+.plan .wgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 18px; }
+.plan .wslot { grid-column: 1 / -1; min-width: 0; display: flex; flex-direction: column; gap: 30px; }
+.plan .wslot.half { grid-column: auto; }
+@media (max-width: 760px) { .plan .wslot.half { grid-column: 1 / -1; } }
+.plan .wmd { display: flex; flex-direction: column; gap: 8px; font-size: .92rem; line-height: 1.55; max-width: 92ch; overflow-wrap: anywhere; }
+.plan .wmd p, .plan .wmd h4, .plan .wmd h5, .plan .wmd h6 { margin: 0; }
+.plan .wmd ul, .plan .wmd ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.plan .wmd blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
+.plan .wmd a { color: var(--run); }
+.plan .wcall { --k: var(--run); display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; border: 1px solid color-mix(in srgb, var(--k) 45%, var(--line)); border-left: 4px solid var(--k); border-radius: 8px; padding: 12px 14px; background: color-mix(in srgb, var(--k) 7%, var(--surface)); }
+.plan .wcall.warn { --k: var(--test); }
+.plan .wcall.decision { --k: var(--plan); }
+.plan .wcall .ic { width: 24px; height: 24px; border-radius: 50%; background: var(--k); color: var(--surface); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: .82rem; }
+.plan .wcall > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.plan .wmetrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 10px; }
+.plan .wmetric { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: var(--surface); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.plan .wmetric b { font-family: var(--display); font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.plan .wmetric span { font-size: .8rem; color: var(--muted); }
+.plan .wmetric small { font-size: .74rem; color: var(--muted); }
+.plan .wmetric.good b { color: var(--ship); } .plan .wmetric.bad b { color: var(--stuck); } .plan .wmetric.warn b { color: var(--test); }
+.plan .wtable { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+.plan .wtable table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+.plan .wtable caption { text-align: left; padding: 8px 12px; color: var(--muted); font-size: .8rem; }
+.plan .wtable th, .plan .wtable td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.plan .wtable th { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; background: color-mix(in srgb, var(--line) 30%, transparent); }
+.plan .wtable tr:last-child td { border-bottom: 0; }
+.plan .wtable .r { text-align: right; font-variant-numeric: tabular-nums; }
+.plan .wchart { position: relative; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--surface); }
+.plan .wdiagram { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--surface); overflow-x: auto; color: var(--fg); }
+.plan .wdiagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.plan .wcap { margin: 0; font-size: .8rem; color: var(--muted); }
+.plan .wimage { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.plan .wimage img { max-width: 100%; max-height: 480px; object-fit: contain; align-self: flex-start; height: auto; border: 1px solid var(--line); border-radius: 8px; }
+.plan .wimage figcaption { font-size: .8rem; color: var(--muted); }
+.plan .wembed { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); display: block; }
 @media (max-width: 1000px) {
   .plan .lane { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .plan .lane .when { flex-direction: row; align-items: baseline; gap: 10px; padding: 0 0 4px; }
@@ -1029,34 +1065,74 @@ function drawQuestion() {
   if (ctl.opts.children.length) box.append(ctl.opts);
   box.append(ctl.row, ctl.said);
 }
+// Plan tab, built from widgets (#1017). `plan.widgets` is an ordered list of {type, title?, width?, ...}.
+// A card with only the older `plan` fields is mapped onto the same widgets by legacyWidgets.
+function legacyWidgets(P, f) {
+  const W = [{ type: "goal", text: P.goal }, { type: "next" }];
+  if (P.picture) W.push(Object.assign({ type: "picture" }, P.picture));
+  W.push({ type: "decisions" });
+  W.push({ type: "ships", parts: P.parts, ships: P.ships, start: P.start, end: P.end });
+  W.push({ type: "risks", risks: P.risks, undo: P.undo, undoNote: P.undoNote });
+  W.push({ type: "doneWhen" });
+  W.push({ type: "outOfScope", items: P.outOfScope });
+  W.push({ type: "folds", folds: P.folds });
+  return W;
+}
 function drawPlan(p) {
   p.classList.add("plan");
   const v = V, { c, f } = v, P = f.plan && typeof f.plan === "object" ? f.plan : {};
-  const parts = arr(P.parts).filter(x => x && x.n != null), ships = arr(P.ships).filter(Boolean), qs = qList(c), list = checkList(f);
-  const sum = f.summary || c.status || "", next = f.next || c.next, met = list.filter(r => r.state === "met").length;
-  const richPlan = !!(P.goal || P.picture || parts.length || ships.length || arr(P.risks).length || arr(P.folds).length);
-
-  // 1. The goal in one line, with counters
-  // Headline: the plan's own goal, else the done-when sentence when it says something of its own, else the summary's first sentence.
-  const dw = String(f.doneWhen || "").trim(), dwGoal = !P.goal && dw && dw.length <= 260 && !/^(every|all) (the )?checks?/i.test(dw);
-  const goalText = P.goal || (dwGoal ? dw[0].toUpperCase() + dw.slice(1) : firstSentence(sum));
-  if (goalText) {
+  const own = Array.isArray(P.widgets);
+  let W = (own ? P.widgets : legacyWidgets(P, f)).filter(w => w && typeof w === "object" && WIDGETS[w.type]);
+  // Questions always show: a widget list without a decisions widget gets one after the goal.
+  if (own && qList(c).length && !W.some(w => w.type === "decisions")) W.splice(W[0] && W[0].type === "goal" ? 1 : 0, 0, { type: "decisions" });
+  if (own && f.summary && !W.some(w => w.type === "folds")) W.push({ type: "folds" });
+  const shipsW = W.find(w => w.type === "ships");
+  const ctx = {
+    v, c, f, list: checkList(f), qs: qList(c),
+    parts: arr(shipsW ? shipsW.parts : P.parts).filter(x => x && x.n != null),
+    ships: arr(shipsW ? shipsW.ships : P.ships).filter(Boolean),
+    rich: own || !!(P.goal || P.picture || arr(P.parts).length || arr(P.ships).length || arr(P.risks).length || arr(P.folds).length)
+  };
+  ctx.met = ctx.list.filter(r => r.state === "met").length;
+  const dw = String(f.doneWhen || "").trim();
+  const goalW = W.find(w => w.type === "goal");
+  ctx.dwGoal = !!(goalW && !goalW.text && dw && dw.length <= 260 && !/^(every|all) (the )?checks?/i.test(dw));
+  const grid = el("div", "wgrid");
+  W.forEach(w => {
+    const slot = el("div", "wslot" + (w.width === "half" ? " half" : ""));
+    try { WIDGETS[w.type](slot, w, ctx); } catch (e) { slot.textContent = ""; }
+    if (slot.children.length) grid.append(slot);
+  });
+  if (grid.children.length) p.append(grid);
+  else prose(p, v.loaded ? "Nothing is written for this card yet." : "Loading…");
+}
+const WIDGETS = {
+  // The goal in one line, with counters (counters: false hides them)
+  goal(p, w, x) {
+    const { f, c, list, met, parts, ships } = x, sum = f.summary || c.status || "", dw = String(f.doneWhen || "").trim();
+    const goalText = w.text || (x.dwGoal ? dw[0].toUpperCase() + dw.slice(1) : firstSentence(sum));
+    if (!goalText) return;
     const g = el("div", "goal"), stats = el("div", "stats");
     g.append(marked(el("p"), goalText));
     const stat = (n, word, you) => { const s = el("div", "stat" + (you ? " you" : "")); s.append(el("b", "", String(n)), el("span", "", word)); stats.append(s); };
-    if (parts.length) stat(parts.length, parts.length === 1 ? "part" : "parts");
-    if (ships.length) stat(ships.length, ships.length === 1 ? "ship" : "ships");
-    if (list.length) stat(met + "/" + list.length, "checks met");
-    const openN = openQs(c).length;
-    if (openN) stat(openN, openN === 1 ? "decision for you" : "decisions for you", true);
+    if (w.counters !== false) {
+      if (parts.length) stat(parts.length, parts.length === 1 ? "part" : "parts");
+      if (ships.length) stat(ships.length, ships.length === 1 ? "ship" : "ships");
+      if (list.length) stat(met + "/" + list.length, "checks met");
+      const openN = openQs(c).length;
+      if (openN) stat(openN, openN === 1 ? "decision for you" : "decisions for you", true);
+    }
     if (stats.children.length) g.append(stats);
     p.append(g);
-  }
-  if (next && !isHow(next)) { const d = el("div", "callout"); prose(d, next); sec(p, "Next step").append(d); }
-
-  // 2. Today and after, only when the detail row carries the picture
-  const lanes = P.picture ? arr(P.picture.lanes).filter(L => L && arr(L.steps).length) : [];
-  if (lanes.length) {
+  },
+  next(p, w, x) {
+    const next = w.text || x.f.next || x.c.next;
+    if (next && !isHow(next)) { const d = el("div", "callout"); prose(d, next); sec(p, w.title || "Next step").append(d); }
+  },
+  // Today and after
+  picture(p, w, x) {
+    const lanes = arr(w.lanes).filter(L => L && arr(L.steps).length), parts = x.parts;
+    if (!lanes.length) return;
     const flow = el("div", "flow");
     lanes.forEach(L => {
       const steps = arr(L.steps), good = L.tone === "good", lane = el("div", "lane " + (good ? "after" : "today")), when = el("div", "when");
@@ -1074,12 +1150,12 @@ function drawPlan(p) {
       });
       flow.append(lane);
     });
-    sec(p, P.picture.title || "Today and after").append(flow);
-  }
-
-  // 3. Decisions: the card's question or questions, a button per option
-  if (qs.length) {
-    const openN = openQs(c).length, s = sec(p, qs.length === 1 ? "1 decision" : qs.length + " decisions", openN < qs.length ? (qs.length - openN) + " of " + qs.length + " answered" : ""), grid = el("div", "decs");
+    sec(p, w.title || "Today and after").append(flow);
+  },
+  // The card's question or questions, a button per option
+  decisions(p, w, x) {
+    const { v, c, qs } = x; if (!qs.length) return;
+    const openN = openQs(c).length, s = sec(p, w.title || (qs.length === 1 ? "1 decision" : qs.length + " decisions"), openN < qs.length ? (qs.length - openN) + " of " + qs.length + " answered" : ""), grid = el("div", "decs");
     s.classList.add("needs"); if (!openN) s.classList.add("settled");
     s.querySelector("h3").prepend(openN ? el("span", "q", "Needs you") : el("span", "q a", "All answered"));
     qs.forEach((q, i) => {
@@ -1093,10 +1169,11 @@ function drawPlan(p) {
       d.append(ctl.row, ctl.said); grid.append(d);
     });
     s.append(grid);
-  }
-
-  // 4. Ship order, with each part's progress
-  if (ships.length || parts.length) {
+  },
+  // Ship order, with each part's progress
+  ships(p, w, x) {
+    const parts = arr(w.parts).filter(q => q && q.n != null), ships = arr(w.ships).filter(Boolean);
+    if (!ships.length && !parts.length) return;
     const order = el("div", "order"), used = new Set();
     const stop = (cls, label, title, text) => { const d = el("div", "stop " + cls); if (label) d.append(el("span", "t", label)); if (title) d.append(marked(el("span", "h"), title)); if (text) d.append(marked(el("span", "d"), text)); order.append(d); return d; };
     const partCard = pt => {
@@ -1105,47 +1182,48 @@ function drawPlan(p) {
       hd.append(partChip(pt.n, parts)); if (pt.title) hd.append(el("b", "", pt.title)); if (pt.size) hd.append(el("span", "sz", String(pt.size)));
       d.append(hd); if (pt.text) d.append(marked(el("p"), pt.text)); if (pt.waits) d.append(el("span", "w", pt.waits));
       if (pt.stage != null) {
-        const at = STAGES.findIndex(x => x.toLowerCase() === String(pt.stage).toLowerCase()), prog = el("div", "prog");
+        const at = STAGES.findIndex(s => s.toLowerCase() === String(pt.stage).toLowerCase()), prog = el("div", "prog");
         STAGES.forEach((name, j) => prog.append(el("span", j <= at ? "on" : j === at + 1 ? "next" : "", name)));
         prog.setAttribute("role", "img"); prog.setAttribute("aria-label", at < 0 ? "Not started" : STAGES[at] + " done" + (at < STAGES.length - 1 ? ", " + STAGES[at + 1] + " next" : ""));
         d.append(prog);
       }
       return d;
     };
-    if (P.start && (P.start.title || P.start.text)) stop("now", P.start.label || "Now", P.start.title, P.start.text);
+    if (w.start && (w.start.title || w.start.text)) stop("now", w.start.label || "Now", w.start.title, w.start.text);
     ships.forEach((sh, i) => {
       const d = stop("ship", sh.label || "Ship " + (i + 1), sh.title, sh.text), box = el("div", "parts");
       d.style.setProperty("--k", "var(--" + PART_TONES[i % PART_TONES.length] + ")");
-      arr(sh.parts).forEach(n => { used.add(String(n)); box.append(partCard(parts.find(x => String(x.n) === String(n)) || { n })); });
+      arr(sh.parts).forEach(n => { used.add(String(n)); box.append(partCard(parts.find(q => String(q.n) === String(n)) || { n })); });
       if (box.children.length) d.append(box);
     });
     const rest = parts.filter(pt => !used.has(String(pt.n)));
     if (rest.length) { const d = stop("ship", ships.length ? "Not in a ship yet" : "Parts", "", ""), box = el("div", "parts"); rest.forEach(pt => box.append(partCard(pt))); d.append(box); }
-    if (P.end && (P.end.title || P.end.text)) stop("end", P.end.label || "Done", P.end.title, P.end.text);
-    sec(p, "Ship order").append(order);
-  }
-
-  // 5. Risk and undo
-  const risks = arr(P.risks).filter(r => r && (r.risk || r.cover)), undo = arr(P.undo).filter(u => u && u.text);
-  if (risks.length || undo.length || P.undoNote) {
-    const two = el("div", "two" + (risks.length && (undo.length || P.undoNote) ? "" : " one"));
+    if (w.end && (w.end.title || w.end.text)) stop("end", w.end.label || "Done", w.end.title, w.end.text);
+    sec(p, w.title || "Ship order").append(order);
+  },
+  // Risk and undo (either half may be left out)
+  risks(p, w, x) {
+    const parts = x.parts, risks = arr(w.risks).filter(r => r && (r.risk || r.cover)), undo = arr(w.undo).filter(u => u && u.text);
+    if (!risks.length && !undo.length && !w.undoNote) return;
+    const two = el("div", "two" + (risks.length && (undo.length || w.undoNote) && w.width !== "half" ? "" : " one"));
     if (risks.length) {
       const b = el("div", "box risk"); b.append(el("h4", "", "What could go wrong → what covers it"));
       risks.forEach(r => { const row = el("div", "row"); row.append(marked(el("b"), r.risk || ""), el("i", "", "→"), marked(el("span", "fix"), r.cover || "")); b.append(row); });
       two.append(b);
     }
-    if (undo.length || P.undoNote) {
+    if (undo.length || w.undoNote) {
       const b = el("div", "box undo"); b.append(el("h4", "", "Undo"));
       undo.forEach(u => { const row = el("div", "row"), who = el("span", "who"); arr(u.parts).forEach(n => who.append(partChip(n, parts))); row.append(who, marked(el("span"), u.text)); b.append(row); });
-      if (P.undoNote) b.append(marked(el("div", "foot"), P.undoNote));
+      if (w.undoNote) b.append(marked(el("div", "foot"), w.undoNote));
       two.append(b);
     }
-    sec(p, "Risk and undo").append(two);
-  }
-
-  // 6. Done when: the sentence, then the checks with a meter
-  if ((f.doneWhen && !dwGoal) || list.length) {
-    const s = sec(p, "Done when", list.length ? met + " of " + list.length : "");
+    sec(p, w.title || (risks.length && !(undo.length || w.undoNote) ? "Risks" : !risks.length ? "Undo" : "Risk and undo")).append(two);
+  },
+  // Done when: the sentence, then the checks with a meter
+  doneWhen(p, w, x) {
+    const { f, list, met, dwGoal } = x;
+    if (!((f.doneWhen && !dwGoal) || list.length)) return;
+    const s = sec(p, w.title || "Done when", list.length ? met + " of " + list.length : "");
     if (list.length) { const m = el("span", "meter"), fill = el("i"); fill.style.width = Math.round(100 * met / list.length) + "%"; m.append(fill); m.setAttribute("role", "img"); m.setAttribute("aria-label", met + " of " + list.length + " checks met"); s.querySelector("h3").append(m); }
     if (f.doneWhen && !dwGoal) prose(s, f.doneWhen);
     if (list.length) {
@@ -1153,31 +1231,220 @@ function drawPlan(p) {
       list.forEach(r => { const li = el("li", r.state === "met" ? "met" : r.state ? "unmet" : ""), t = marked(el("span"), r.text); if (r.by) t.append(el("small", "", "checked by " + r.by)); li.append(t); ul.append(li); });
       s.append(ul);
     }
-  }
-
-  // 7. Not in this card
-  const outs = arr(P.outOfScope).filter(o => o && (o.name || typeof o === "string"));
-  if (outs.length) {
+  },
+  outOfScope(p, w) {
+    const outs = arr(w.items).filter(o => o && (o.name || typeof o === "string"));
+    if (!outs.length) return;
     const box = el("div", "outs");
-    outs.forEach(o => { const s = el("span", "out"); s.append(el("b", "", typeof o === "string" ? o : o.name)); if (o.note) s.append(document.createTextNode(" · " + o.note)); box.append(s); });
-    sec(p, "Not in this card").append(box);
-  }
-
-  // 8. Everything else, folded
-  const folds = el("div", "folds");
-  const fold = (title, note, fill, open) => { const d = el("details"), s = el("summary", "", title), inn = el("div", "in"); if (note) s.append(el("small", "", note)); fill(inn); d.append(s, inn); d.open = !!open; folds.append(d); };
-  arr(P.folds).forEach(F => {
-    if (!F || !F.title) return;
-    fold(F.title, F.note, inn => {
-      if (arr(F.items).length) { const ol = el("ol"); F.items.forEach(t => ol.append(marked(el("li"), t))); inn.append(ol); }
-      if (arr(F.pairs).length) { const dl = el("dl", "kv"); F.pairs.forEach(pr => { if (arr(pr).length) dl.append(el("dt", "", String(pr[0])), marked(el("dd"), pr[1])); }); inn.append(dl); }
-      if (F.text) inn.append(el("p", "prose", String(F.text)));
+    outs.forEach(o => { const s = el("span", "out"); s.append(el("b", "", typeof o === "string" ? o : String(o.name))); if (o.note) s.append(document.createTextNode(" · " + o.note)); box.append(s); });
+    sec(p, w.title || "Not in this card").append(box);
+  },
+  // Folded detail; the card's own summary is always the last fold
+  folds(p, w, x) {
+    const sum = x.f.summary || x.c.status || "", rich = x.rich, folds = el("div", "folds");
+    const fold = (title, note, fill, open) => { const d = el("details"), s = el("summary", "", title), inn = el("div", "in"); if (note) s.append(el("small", "", note)); fill(inn); d.append(s, inn); d.open = !!open; folds.append(d); };
+    arr(w.folds).forEach(F => {
+      if (!F || !F.title) return;
+      fold(F.title, F.note, inn => {
+        if (arr(F.items).length) { const ol = el("ol"); F.items.forEach(t => ol.append(marked(el("li"), t))); inn.append(ol); }
+        if (arr(F.pairs).length) { const dl = el("dl", "kv"); F.pairs.forEach(pr => { if (arr(pr).length) dl.append(el("dt", "", String(pr[0])), marked(el("dd"), pr[1])); }); inn.append(dl); }
+        if (F.text) inn.append(el("p", "prose", String(F.text)));
+        if (F.markdown) inn.append(mdRender(F.markdown));
+      });
     });
+    if (sum) fold(rich ? "Full plan text" : "What this card is", rich ? "as written on the card" : "", inn => inn.append(el("p", "prose", sum)), !rich);
+    if (folds.children.length) sec(p, w.title || (rich ? "Detail" : "The card's own words")).append(folds);
+  },
+  // ---- New kinds ----
+  markdown(p, w) { if (!w.text) return; sec(p, w.title || "").append(mdRender(w.text)); tidyHead(p); },
+  callout(p, w) {
+    const tone = ["info", "warn", "decision"].includes(w.tone) ? w.tone : "info";
+    if (!w.text && !w.title) return;
+    const d = el("div", "wcall " + tone), icon = { info: "i", warn: "!", decision: "?" }[tone];
+    d.append(el("span", "ic", icon));
+    const body = el("div");
+    if (w.title) body.append(marked(el("b"), w.title));
+    if (w.text) body.append(mdRender(w.text));
+    d.append(body); p.append(d);
+  },
+  metrics(p, w) {
+    const items = arr(w.items).filter(m => m && m.value != null);
+    if (!items.length) return;
+    const g = el("div", "wmetrics");
+    items.forEach(m => {
+      const t = el("div", "wmetric" + (["good", "bad", "warn"].includes(m.tone) ? " " + m.tone : ""));
+      t.append(el("b", "", String(m.value)), el("span", "", String(m.label || "")));
+      if (m.note) t.append(marked(el("small"), m.note));
+      g.append(t);
+    });
+    sec(p, w.title || "").append(g); tidyHead(p);
+  },
+  table(p, w) {
+    const cols = arr(w.columns).map(c => typeof c === "string" ? { key: c, label: c } : c && c.key != null ? c : null).filter(Boolean);
+    const rows = arr(w.rows).filter(r => r && typeof r === "object");
+    if (!cols.length || !rows.length) return;
+    const wrap = el("div", "wtable"), t = el("table"), hr = el("tr");
+    cols.forEach(c => { const th = el("th", c.align === "right" ? "r" : "", String(c.label ?? c.key)); th.scope = "col"; hr.append(th); });
+    const th = el("thead"); th.append(hr); t.append(th);
+    const tb = el("tbody");
+    rows.forEach(r => { const tr = el("tr"); cols.forEach((c, i) => { const val = Array.isArray(r) ? r[i] : r[c.key]; tr.append(marked(el("td", c.align === "right" ? "r" : ""), val == null ? "" : String(val))); }); tb.append(tr); });
+    t.append(tb);
+    if (w.caption) { const cap = el("caption"); marked(cap, w.caption); t.prepend(cap); }
+    wrap.append(t); sec(p, w.title || "").append(wrap); tidyHead(p);
+  },
+  chart(p, w) {
+    const kind = ["bar", "line", "pie"].includes(w.kind) ? w.kind : "bar", rows = arr(w.rows).filter(r => r && typeof r === "object");
+    const series = arr(w.series).map(s => typeof s === "string" ? { key: s, label: s } : s).filter(s => s && s.key != null);
+    if (!rows.length || !series.length || w.x == null) return;
+    const s = sec(p, w.title || ""), box = el("div", "wchart"), cv = el("canvas");
+    box.style.height = Math.max(160, Math.min(520, +w.height || 260)) + "px";
+    cv.setAttribute("role", "img"); cv.setAttribute("aria-label", (w.title || "Chart") + ": " + rows.map(r => r[w.x] + " " + series.map(se => r[se.key]).join("/")).join(", "));
+    box.append(cv); s.append(box); tidyHead(p);
+    loadLib(LIBS.chart).then(() => {
+      if (!cv.isConnected && !document.body.contains(box)) { /* drawn into a pane being built */ }
+      const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue("--" + n).trim();
+      const pal = ["run", "ship", "plan", "test", "stuck", "done"].map(tok);
+      const Ch = window.Chart; Ch.defaults.color = tok("muted"); Ch.defaults.borderColor = tok("line"); Ch.defaults.font.family = css.getPropertyValue("--body");
+      const labels = rows.map(r => String(r[w.x]));
+      const data = { labels, datasets: series.map((se, i) => ({
+        label: String(se.label ?? se.key), data: rows.map(r => +r[se.key] || 0),
+        backgroundColor: kind === "pie" ? labels.map((_, j) => pal[j % pal.length]) : pal[i % pal.length],
+        borderColor: kind === "pie" ? tok("surface") : pal[i % pal.length], borderWidth: kind === "line" ? 2 : 1, tension: .25
+      })) };
+      new Ch(cv, { type: kind, data, options: { responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: kind === "pie" || series.length > 1 } },
+        scales: kind === "pie" ? {} : { y: { beginAtZero: true, stacked: !!w.stacked }, x: { stacked: !!w.stacked } } } });
+    }).catch(() => { box.textContent = "The chart library did not load."; });
+  },
+  diagram(p, w) {
+    if (!w.svg && !w.mermaid) return;
+    const s = sec(p, w.title || ""), box = el("div", "wdiagram");
+    s.append(box); tidyHead(p);
+    if (w.caption) s.append(marked(el("p", "wcap"), w.caption));
+    if (w.svg) { const svg = cleanSvg(String(w.svg)); if (svg) mountSvg(box, svg); else box.textContent = "This diagram could not be shown safely."; return; }
+    box.textContent = "Drawing…";
+    loadLib(LIBS.mermaid).then(async () => {
+      const M = window.mermaid, dark = getComputedStyle(document.documentElement).colorScheme === "dark";
+      M.initialize({ startOnLoad: false, securityLevel: "strict", theme: dark ? "dark" : "neutral", htmlLabels: false, flowchart: { htmlLabels: false }, fontFamily: "Inter, Segoe UI, sans-serif" });
+      const id = "mmd" + Math.random().toString(36).slice(2);
+      const out = await M.render(id, String(w.mermaid));
+      const svg = cleanSvg(out.svg); box.textContent = "";
+      if (svg) mountSvg(box, svg); else box.textContent = "This diagram could not be shown safely.";
+    }).catch(() => { box.textContent = "This diagram could not be drawn."; });
+  },
+  image(p, w) {
+    const src = safeUrl(w.url); if (!src) return;
+    const fig = el("figure", "wimage"), img = el("img");
+    img.src = src; img.alt = String(w.alt || w.caption || ""); img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+    fig.append(img); if (w.caption) fig.append(marked(el("figcaption"), w.caption));
+    sec(p, w.title || "").append(fig); tidyHead(p);
+  },
+  embed(p, w) {
+    const src = safeUrl(w.url); if (!src) return;
+    const f = el("iframe", "wembed");
+    f.setAttribute("sandbox", "allow-scripts"); f.setAttribute("referrerpolicy", "no-referrer"); f.setAttribute("loading", "lazy");
+    f.title = String(w.title || "Embedded page"); f.src = src;
+    f.style.height = Math.max(120, Math.min(900, +w.height || 360)) + "px";
+    sec(p, w.title || "").append(f); tidyHead(p);
+    let from = "this board"; try { const u = new URL(src, location.href); if (u.origin !== location.origin) from = u.host; } catch (e) {}
+    p.lastElementChild.append(marked(el("p", "wcap"), (w.caption ? w.caption + " · " : "") + "Embedded page from " + from + ", sandboxed"));
+  }
+};
+// A widget with no title gets no empty heading
+function tidyHead(p) { const h = p.querySelector(":scope > .sec > h3"); if (h && !h.textContent.trim()) h.remove(); }
+// Pinned libraries, from cdnjs only
+const LIBS = {
+  chart: "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js",
+  mermaid: "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"
+};
+const libLoads = {};
+function loadLib(url) {
+  return libLoads[url] || (libLoads[url] = new Promise((ok, no) => {
+    const s = document.createElement("script"); s.src = url; s.crossOrigin = "anonymous"; s.referrerPolicy = "no-referrer";
+    s.onload = ok; s.onerror = () => { delete libLoads[url]; no(); }; document.head.append(s);
+  }));
+}
+// Only https: urls, or a relative path inside this artifact (no scheme, no //host).
+function safeUrl(u) {
+  u = String(u || "").trim(); if (!u) return "";
+  if (/^https:\/\//i.test(u)) { try { return new URL(u).href; } catch (e) { return ""; } }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(u) || u.startsWith("//") || u.startsWith("\\") || /[\u0000-\u001f\\]/.test(u)) return "";
+  return u;
+}
+// Markdown, a safe subset: # headings, paragraphs, - and 1. lists, > quotes, **bold**, *italic*, `code`,
+// [text](https://link). Built as DOM nodes with text, never as HTML.
+function mdRender(src) {
+  const root = el("div", "wmd"), lines = String(src || "").replace(/\r/g, "").split("\n");
+  let list = null, para = [];
+  const flush = () => { if (para.length) { root.append(mdInline(el("p"), para.join(" "))); para = []; } };
+  lines.forEach(raw => {
+    const line = raw.trimEnd(), t = line.trim();
+    let m;
+    if (!t) { flush(); list = null; return; }
+    if ((m = t.match(/^(#{1,4})\s+(.*)$/))) { flush(); list = null; root.append(mdInline(el("h" + Math.min(6, m[1].length + 3)), m[2])); return; }
+    if ((m = t.match(/^([-*]|\d+[.)])\s+(.*)$/))) {
+      flush(); const tag = /\d/.test(m[1]) ? "ol" : "ul";
+      if (!list || list.tagName.toLowerCase() !== tag) { list = el(tag); root.append(list); }
+      list.append(mdInline(el("li"), m[2])); return;
+    }
+    if ((m = t.match(/^>\s?(.*)$/))) { flush(); list = null; root.append(mdInline(el("blockquote"), m[1])); return; }
+    list = null; para.push(t);
   });
-  if (sum) fold(richPlan ? "Full plan text" : "What this card is", richPlan ? "as written on the card" : "", inn => inn.append(el("p", "prose", sum)), !richPlan);
-  if (folds.children.length) sec(p, richPlan ? "Detail" : "The card's own words").append(folds);
-
-  if (!p.children.length) prose(p, v.loaded ? "Nothing is written for this card yet." : "Loading…");
+  flush(); return root;
+}
+function mdInline(parent, text) {
+  String(text).split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/).forEach(t => {
+    if (!t) return;
+    let m;
+    if (/^\*\*[^*]+\*\*$/.test(t)) parent.append(el("strong", "", t.slice(2, -2)));
+    else if (/^\*[^*]+\*$/.test(t) && t.length > 2) parent.append(el("em", "", t.slice(1, -1)));
+    else if (/^`[^`]+`$/.test(t)) parent.append(el("code", "", t.slice(1, -1)));
+    else if ((m = t.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/))) {
+      const href = /^https:\/\//i.test(m[2]) ? safeUrl(m[2]) : "";
+      if (href) { const a = el("a", "", m[1]); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; parent.append(a); }
+      else parent.append(document.createTextNode(m[1]));
+    } else parent.append(document.createTextNode(t));
+  });
+  return parent;
+}
+// Inline SVG, cleaned by an allowlist: no script, no foreignObject, no on* attributes, no links out.
+// Only references inside the drawing (#id) survive; <style> text is kept only when it has no url(), @import or escapes.
+const SVG_TAGS = new Set(["svg", "g", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "text", "tspan", "title", "desc", "defs", "marker", "lineargradient", "radialgradient", "stop", "clippath", "mask", "pattern", "use", "symbol", "style"]);
+const SVG_ATTRS = new Set(["id", "class", "viewbox", "width", "height", "x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "d", "points", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "opacity", "transform", "font-size", "font-family", "font-weight", "font-style", "text-anchor", "dominant-baseline", "alignment-baseline", "letter-spacing", "dx", "dy", "rotate", "textlength", "lengthadjust", "offset", "stop-color", "stop-opacity", "gradientunits", "gradienttransform", "spreadmethod", "fx", "fy", "markerwidth", "markerheight", "markerunits", "refx", "refy", "orient", "marker-start", "marker-mid", "marker-end", "clip-path", "clip-rule", "mask", "clippathunits", "maskunits", "patternunits", "patterncontentunits", "patterntransform", "preserveaspectratio", "role", "aria-label", "aria-hidden", "aria-roledescription", "xmlns", "href", "xlink:href", "style", "visibility", "display", "vector-effect", "shape-rendering", "paint-order", "text-decoration", "white-space", "xml:space"]);
+const CSS_BAD = /url\s*\(\s*['"]?\s*(?!#)|image-set|src\s*\(|@font-face|@import|expression\s*\(|javascript:|behavio(u)?r\s*:|-moz-binding|\\|<\/?/i;
+// A cleaned drawing goes into its own closed shadow root, so any <style> in it reaches only the drawing.
+function mountSvg(box, svg) { const host = el("div", "wsvg"), root = host.attachShadow({ mode: "closed" }); root.append(svg); box.append(host); }
+function cleanSvg(text) {
+  if (text.length > 400000) return null;
+  let doc;
+  try { doc = new DOMParser().parseFromString(text, "image/svg+xml"); } catch (e) { return null; }
+  const root = doc.documentElement;
+  if (!root || root.localName !== "svg" || root.namespaceURI !== "http://www.w3.org/2000/svg" || doc.getElementsByTagName("parsererror").length) return null;
+  const walk = node => {
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 3) return;
+      if (ch.nodeType !== 1) { ch.remove(); return; }
+      const name = ch.localName.toLowerCase();
+      if (ch.namespaceURI !== "http://www.w3.org/2000/svg" || !SVG_TAGS.has(name)) { ch.remove(); return; }
+      if (name === "style") { const css = ch.textContent; if (ch.children.length || CSS_BAD.test(css)) { ch.remove(); return; } }
+      cleanAttrs(ch); walk(ch);
+    });
+  };
+  const cleanAttrs = e => {
+    [...e.attributes].forEach(a => {
+      const n = a.name.toLowerCase(), val = a.value;
+      const ok = SVG_ATTRS.has(n) && !n.startsWith("on");
+      const isRef = n === "href" || n === "xlink:href";
+      if (!ok || (isRef && !/^#[\w:.-]+$/.test(val.trim())) || (n === "style" && CSS_BAD.test(val)) || (!isRef && n !== "style" && /url\s*\(\s*['"]?\s*(?!#)/i.test(val)) || /javascript:|data:/i.test(val)) e.removeAttribute(a.name);
+    });
+  };
+  cleanAttrs(root); walk(root);
+  const svg = document.importNode(root, true);
+  const vb = (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number), vw = vb.length === 4 && vb[2] > 0 ? vb[2] : 0;
+  svg.removeAttribute("width"); svg.removeAttribute("height"); svg.removeAttribute("style");
+  svg.style.width = "100%"; svg.style.height = "auto"; svg.style.display = "block"; svg.style.margin = "0 auto"; if (vw) { svg.style.maxWidth = Math.round(vw) + "px"; svg.style.minWidth = Math.round(Math.min(vw, 560)) + "px"; }
+  svg.setAttribute("role", svg.getAttribute("role") || "img");
+  return svg;
 }
 const DECIDE = {
   "Human test": [["Send back", "send back.", "why"], ["Ship it", "ship it."]],

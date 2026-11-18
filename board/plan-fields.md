@@ -78,6 +78,76 @@ Counters beside the headline are worked out by the page: number of parts, number
 
 Parts not named in any ship appear in a last stop, "Not in a ship yet" (or "Parts" when there are no ships at all).
 
+## Widgets (`plan.widgets`, card #1017)
+
+Since #1017 the Plan tab is built from widgets. `plan.widgets` is an ordered list; the page draws them top to bottom and skips any type it does not know (or one whose data is empty). A card with no `plan.widgets` still works: the older fields above are mapped onto the same widgets in the old order (goal, next, picture, decisions, ships, risks, doneWhen, outOfScope, folds).
+
+Every widget is `{ type, title?, width?, ... }`. `title` replaces the block's heading (the new kinds have no heading without one). `width: "half"` puts it beside the next half widget on a wide screen; on a phone everything is full width. Text fields take the light marks above unless the row says markdown.
+
+Two safety nets: if the card has a question and the list has no `decisions` widget, one is added after the goal; if the detail row has a `summary` and the list has no `folds` widget, a folds widget is added at the end (the "Full plan text" fold).
+
+### Today's widgets
+
+| type | Fields | Notes |
+|---|---|---|
+| `goal` | `text?`, `counters?` | Headline plus counters. No `text`: falls back as `plan.goal` did. `counters: false` hides them. |
+| `next` | `text?` | Next step callout; defaults to the detail row's `next`. |
+| `picture` | `lanes` | Today/After picture, same lane shape as `plan.picture`. |
+| `decisions` | none | The card's `question`(s), with answer buttons. |
+| `ships` | `parts`, `ships?`, `start?`, `end?` | Ship order and part cards. Its `parts` also colour the `#n` chips in every other widget. |
+| `risks` | `risks?`, `undo?`, `undoNote?` | Risk and undo. Either half alone is fine. |
+| `doneWhen` | none | From the detail row's `doneWhen` and `checks`/`results`. |
+| `outOfScope` | `items` | Same shape as `plan.outOfScope`. |
+| `folds` | `folds?` | Same as `plan.folds`; a fold may also carry `markdown`. The card's summary is always the last fold. |
+
+```json
+{ "type": "goal", "text": "Production {refuses to start} unless tenant identity is enforced." }
+{ "type": "next" }
+{ "type": "picture", "title": "Where the filter SQL comes from", "lanes": [ { "when": "Today", "tone": "bad", "steps": [ { "who": "Browser", "title": "Sends SQL" } ], "arrows": [] } ] }
+{ "type": "decisions" }
+{ "type": "ships", "parts": [ { "n": 1, "title": "Boot guard", "size": "S", "stage": "Plan" } ], "ships": [ { "title": "Boot guard, alone", "parts": [1] } ] }
+{ "type": "risks", "risks": [ { "risk": "The guard stops production", "cover": "One override, no deploy" } ], "undo": [ { "parts": [1], "text": "Set the override." } ] }
+{ "type": "doneWhen" }
+{ "type": "outOfScope", "items": [ "Sending any email", { "name": "BUG-15", "note": "its own card" } ] }
+{ "type": "folds", "folds": [ { "title": "Critic's notes", "items": [ "..." ] } ] }
+```
+
+### New kinds
+
+| type | Fields | Notes |
+|---|---|---|
+| `markdown` | `text` | Safe subset: `#`–`####` headings, paragraphs, `-` and `1.` lists, `>` quotes, `**bold**`, `*italic*`, `` `code` ``, `[text](https://...)`. Built as text nodes; raw HTML shows as text; only https links. |
+| `callout` | `tone`, `title?`, `text?` | `tone`: `info` (blue), `warn` (amber) or `decision` (purple). `text` is markdown. |
+| `metrics` | `items: [ { value, label, note?, tone? } ]` | Number tiles. `tone`: `good`, `bad` or `warn` colours the number. |
+| `table` | `columns`, `rows`, `caption?` | `columns`: strings, or `{ key, label?, align? }` (`align: "right"` for numbers). `rows`: objects keyed by column key, or arrays in column order. Cells take light marks. |
+| `chart` | `kind`, `x`, `series`, `rows`, `stacked?`, `height?` | `kind`: `bar`, `line` or `pie`. `x` is the row key for the labels; `series` are row keys (or `{ key, label }`). Chart.js 4.4.1 from cdnjs, coloured from the board's tokens. |
+| `diagram` | `svg` or `mermaid`, `caption?` | `svg`: inline SVG, cleaned by an allowlist (no script, foreignObject, `on*`, links out, `<image>`, animation; `href` only to `#id`; `<style>` and `style` dropped if they hold `url()` to anything but `#id`, `image-set`, `src()`, `@font-face`, `@import` or escapes; the drawing sits in its own closed shadow root so its styles reach nothing else). `mermaid`: source drawn by Mermaid 10.9.1 from cdnjs (strict mode, no HTML labels), then cleaned the same way. |
+| `image` | `url`, `caption?`, `alt?` | An artifact asset url (https, or a path inside the artifact). Anything else is dropped. |
+| `embed` | `url`, `height?`, `caption?` | An HTML asset in an iframe with `sandbox="allow-scripts"`, labelled with the host it comes from (no same-origin: it cannot reach the board, its data or its sign-in). Height fixed, 120–900, default 360. Same url rule as `image`. |
+
+```json
+{ "type": "markdown", "title": "Why", "text": "a teammate asked on **17 Nov**.\n\n- 260 joiners\n- 332 win-back" }
+{ "type": "callout", "tone": "decision", "title": "In Human test: PR 1957", "text": "**Your call:** review, then say ship." }
+{ "type": "metrics", "title": "Today's counts", "items": [ { "value": 260, "label": "new joiners" }, { "value": 333, "label": "a teammate's figure", "tone": "warn" } ] }
+{ "type": "table", "width": "half", "columns": [ { "key": "d", "label": "Definition" }, { "key": "n", "label": "People", "align": "right" } ], "rows": [ { "d": "Lapsed alone", "n": 247 } ] }
+{ "type": "chart", "width": "half", "kind": "bar", "x": "year", "stacked": true, "series": [ { "key": "lapsed", "label": "Lapsed" } ], "rows": [ { "year": "2025", "lapsed": 65 } ] }
+{ "type": "diagram", "title": "Boot check", "mermaid": "flowchart TD\n  A[Boot] --> B{Enforced?}\n  B -- no --> X[Exit 1]" }
+{ "type": "diagram", "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20'><rect width='40' height='20' fill='currentColor'/></svg>" }
+{ "type": "image", "url": "https://...asset url...", "caption": "The dashboard today" }
+{ "type": "embed", "url": "mini/forecast.html", "height": 320, "caption": "Try the forecast" }
+```
+
+### Which widgets suit which card
+
+- **Feature or build card** (several parts): goal, decisions, picture (Today/After), ships, risks, doneWhen, outOfScope, folds.
+- **Data or analysis card** (counts, lists, cohorts): goal, metrics, table, chart, a data-flow diagram, then ships and risks. Leave out the picture.
+- **Security or guard card** (one rule, small change): goal, a callout with where it stands, a diagram of the check, risks with undo, doneWhen.
+- **Bug fix**: goal, a markdown "what happens / why" block, risks with undo, doneWhen. Usually no ships.
+- **Research or question card**: goal, decisions, markdown findings, a table of options, folds for the sources.
+- **UI card**: goal, image (before/after screenshots as assets) or an embed of a mock-up, decisions, doneWhen.
+
+Keep it short: four to eight widgets. Put what the owner must act on (decisions, a decision callout) near the top.
+
 ## A complete example
 
 SEC-12, as drawn in `mockups/plan-tab-v2.html`. The same content is in `mockups/plan-fields-example.json`. `card` holds the card-row fields and `detail` the detail-row fields.
