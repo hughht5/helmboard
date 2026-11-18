@@ -67,3 +67,5 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Queue a card on a merge lane only after its critic has passed on the final head (lesson: #1017 v32 published before the second critic pass, 18 Nov 2026).
 
 - Before any push after a rebase: `git status` must be clean (no rebase in progress). Lesson #217, 18 Nov 2026: a paused rebase was pushed, the branch emptied and GitHub closed PR 1945 for good.
+
+- Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to the board in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
