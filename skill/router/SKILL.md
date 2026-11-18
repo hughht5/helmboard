@@ -412,3 +412,4 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 - Mark something done that you have not checked.
 
 - **Email customer column**: after Deploy complete, a card that needs a customer told goes to "Email customer". Draft the full email on the card (`email` {to, subject, body}) for the owner to copy; never send it unless he explicitly says to send that one. #36 needs one.
+- **Trust rules:** tag every claim to the owner and on cards [verified] (with proof), [tester] or [guess]; never state a guess as fact. Every card move carries a "How I know:" line (what ran, where, when) in its status. Briefs point sessions at brief-rules.md "Trust rules".

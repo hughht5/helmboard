@@ -73,3 +73,11 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Testers must check layout stability: controls must not move when their own state changes.
 
 - Check states on cards: `results`/`checks` entries use state "met" when passed (anything else shows red "Not met"). Lesson 18 Nov 2026: #211 and #216 showed all checks failing because they were stored as "open" after the tester passed. Set them to met with `by` when moving to Human test.
+
+## Trust rules
+1. **No unverified claims.** Every finding you report is tagged:
+   - **[verified]** with the proof (command + output, test run, CI/deploy run link, screenshot path);
+   - **[tester]** when it rests on the independent tester's report;
+   - **[guess]** when you haven't checked it. A guess is never written as fact.
+   Example of what this prevents: "customers can find them in search" (#191) was a guess stated as fact.
+2. **"How I know" line.** Every report that moves a card (to Human test, Ship it, Done) ends with one line: what was actually run, where (stack/port, dataset, CI or deploy run id) and when. The Router copies it to the card's status.
