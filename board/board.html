@@ -77,8 +77,8 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .email h3 { font-size: .9rem; margin: 0; color: var(--mail); }
 .email .erow { display: grid; grid-template-columns: 64px 1fr auto; gap: 8px; align-items: start; }
 .email .ek { color: var(--muted); font-size: .8rem; padding-top: 3px; }
-.email .ev { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; font-size: .9rem; }
-.email .ev.body { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--surface); }
+.email .emv { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; font-size: .9rem; }
+.email .emv.body { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--surface); }
 .email .enone, .email .enote { color: var(--muted); font-size: .84rem; }
 @media (max-width: 520px) { .email .erow { grid-template-columns: 1fr auto; } .email .ek { grid-column: 1 / -1; padding: 0; } }
 .cardarch { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -627,7 +627,7 @@ function emailBlock(c) {
   const str = v => Array.isArray(v) ? v.map(String).join(", ") : v == null ? "" : String(v);
   if (!e || !(str(e.to) || str(e.subject) || str(e.body))) { box.append(el("div", "enone", "Draft coming from the Router")); return box; }
   [["To", str(e.to), ""], ["Subject", str(e.subject), ""], ["Body", str(e.body), " body"]].forEach(([k, val, cls]) => {
-    const row = el("div", "erow"), v = el("div", "ev" + cls, val || "(empty)");
+    const row = el("div", "erow"), v = el("div", "emv" + cls, val || "(empty)");
     const b = el("button", "linkbtn", "Copy"); b.type = "button"; b.setAttribute("aria-label", "Copy " + k.toLowerCase()); b.disabled = !val;
     b.addEventListener("click", () => copyText(val, v, b));
     row.append(el("span", "ek", k), v, b); box.append(row);
