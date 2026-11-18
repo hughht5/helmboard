@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/hooks/router/block-shell-browser.js\"", "timeout": 10 },
+          { "type": "command", "command": "node \"$HOME/.claude/hooks/router/router-merge-guard.js\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/hooks/router/router-cards-check.js\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/hooks/router/router-postcompact.js\"", "timeout": 15 }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/hooks/router/router-postcompact.js\"", "timeout": 15 }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1470 @@
+<title>Board V2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a left-to-right board, one lane per column; the lanes that need the owner are tinted stronger. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --fg: #18212b; --muted: #5d6b7a; --line: #d9dfe7;
+  --plan: #6b4fc4; --test: #b46a00; --stuck: #c23a3a; --run: #2767b8; --ship: #1f8a5b; --done: #7a8694;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: Inter, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11161c; --surface: #1a212a; --fg: #e6ebf1; --muted: #98a5b3; --line: #2c3743;
+  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --done: #8794a2; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11161c; --surface: #1a212a; --fg: #e6ebf1; --muted: #98a5b3; --line: #2c3743;
+  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --done: #8794a2; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 8px; }
+.wrap { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+h1 { font-family: var(--display); font-size: 1.5rem; font-weight: 600; margin: 0; }
+h1 span { color: var(--muted); font-weight: 500; }
+#stamp { color: var(--muted); font-size: .85rem; }
+#note { color: var(--stuck); font-size: .85rem; }
+h2 { font-family: var(--display); font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; text-wrap: balance; }
+h2 .count { font-family: var(--body); font-size: .8rem; font-weight: 600; color: var(--surface); background: var(--c); border-radius: 999px; padding: 1px 8px; font-variant-numeric: tabular-nums; }
+h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+html, body { height: 100%; box-sizing: border-box; }
+.wrap { height: 100%; }
+.board { flex: 1; min-height: 0; display: flex; gap: 12px; overflow-x: scroll; align-items: stretch; padding-bottom: 10px; scrollbar-width: auto; scrollbar-color: var(--muted) var(--line); }
+.board::-webkit-scrollbar { height: 14px; }
+.board::-webkit-scrollbar-track { background: var(--line); border-radius: 7px; }
+.board::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 7px; }
+.cards { overflow-y: auto; min-height: 0; }
+.more { font: inherit; font-size: .8rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; cursor: pointer; }
+.more:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
+a.more { text-decoration: none; }
+.say { font: inherit; width: 100%; box-sizing: border-box; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; resize: vertical; }
+.hint { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.more:disabled { color: var(--muted); cursor: default; }
+section { flex: 1 0 250px; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: color-mix(in srgb, var(--c) 7%, transparent); border-radius: 8px; padding: 10px; }
+section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.sub { font-size: .75rem; font-weight: 600; color: var(--c); text-transform: uppercase; letter-spacing: .06em; margin: -6px 0 0 18px; }
+.cards { display: flex; flex-direction: column; gap: 8px; }
+.empty { color: var(--muted); font-size: .9rem; margin: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 6px; min-width: 0; cursor: pointer; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; flex: none; }
+.card:hover { border-color: var(--c); }
+.card:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+/* Card full view: a review bench. Header and facts, tabs, a working pane, and a decision bar fixed along the bottom. */
+#veil { position: fixed; inset: 0; background: rgba(8, 12, 18, .62); z-index: 20; display: flex; justify-content: center; align-items: center;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+#sheet { background: var(--surface); color: var(--fg); border-radius: 12px; width: 95vw; height: 93vh; max-width: 100%; max-height: 100%; border-top: 5px solid var(--c); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(0, 0, 0, .45); box-sizing: border-box; }
+#sheet > header { flex: none; padding: 18px 26px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
+#sheet .bar { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+#sheet h2 { font-size: 1.45rem; line-height: 1.25; display: block; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+#sheet h2::before { content: none; }
+#sheet h2 .n { color: var(--muted); font-weight: 500; margin-right: 10px; font-variant-numeric: tabular-nums; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: .86rem; }
+.facts .chip { padding: 2px 8px; font-size: .8rem; }
+.facts .chip.tag { color: color-mix(in srgb, hsl(var(--h) 65% 50%) 55%, var(--fg)); border-color: color-mix(in srgb, hsl(var(--h) 65% 50%) 60%, var(--line)); }
+.facts .pill { width: auto; padding: 3px 12px; }
+.facts .wait { color: var(--muted); }
+.facts .wait.late { color: var(--stuck); font-weight: 600; }
+.facts .links { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.linkbtn { font: inherit; font-size: .84rem; font-weight: 500; color: var(--run); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+.linkbtn:hover { border-color: var(--run); }
+.linkbtn:disabled { opacity: .55; cursor: default; }
+.linkbtn.danger { color: var(--stuck); border-color: var(--stuck); font-weight: 600; }
+.arch { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.archq { font-size: .86rem; font-weight: 600; }
+.colact { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.more.danger { color: var(--stuck); border-color: var(--stuck); font-weight: 600; }
+.colmsg.ok { color: var(--muted); }
+.linkbtn:focus-visible, .tab:focus-visible, .stepbtn:focus-visible, .step:focus-visible, .dec button:focus-visible, .film button:focus-visible, .stagebox:focus-visible, #zoom button:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+#close { font: inherit; background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--fg); padding: 6px 14px; cursor: pointer; flex: none; }
+#close:hover, .more:hover { border-color: var(--muted); }
+#close:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab { font: inherit; font-size: .94rem; font-weight: 500; color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 14px 9px; cursor: pointer; white-space: nowrap; flex: none; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--c); font-weight: 600; }
+.pane { flex: 1; min-height: 0; overflow-y: auto; padding: 28px 30px 40px; display: flex; flex-direction: column; gap: 30px; }
+.pane.bench { padding: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 0; }
+.ev { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px 24px; border-right: 1px solid var(--line); background: var(--bg); overflow-y: auto; }
+.ev .label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stagebox { flex: 1 1 280px; min-height: 220px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: zoom-in; padding: 0; }
+.stagebox:hover { border-color: var(--run); }
+.stagebox img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.stagebox.wide, #zoom .stage.wide { overflow-x: auto; overflow-y: hidden; justify-content: flex-start; }
+.stagebox.wide img, #zoom .stage.wide img { max-width: none; max-height: 100%; min-height: min(100%, 72px); flex: none; }
+#zoom .stage.wide img { min-height: min(60%, 160px); }
+.stagebox.tall, #zoom .stage.tall { overflow-y: auto; overflow-x: hidden; align-items: flex-start; }
+.stagebox.tall img, #zoom .stage.tall img { max-height: none; max-width: 100%; flex: none; }
+.ev .cap { font-size: 1rem; line-height: 1.45; margin: 0; flex: none; max-width: 80ch; }
+.film { display: flex; gap: 8px; overflow-x: auto; padding: 3px; flex: none; }
+.film button { flex: 0 0 112px; height: 70px; padding: 0; border: 2px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); cursor: pointer; }
+.film button[aria-current="true"] { border-color: var(--run); }
+.film img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+.noev { flex: none; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 28px 24px; }
+.todo { min-width: 0; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; display: flex; flex-direction: column; gap: 24px; }
+.steps { display: flex; flex-direction: column; gap: 4px; }
+.step { border: 1px solid transparent; border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; cursor: pointer; }
+.step:hover { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.step.cur { border-color: var(--run); background: color-mix(in srgb, var(--run) 8%, transparent); cursor: default; padding-block: 14px; }
+.step .mark { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; color: var(--muted); box-sizing: border-box; font-variant-numeric: tabular-nums; }
+.step.cur .mark { border-color: var(--run); color: var(--run); }
+.step.pass .mark { background: var(--ship); border-color: var(--ship); color: var(--surface); }
+.step.fail .mark { background: var(--stuck); border-color: var(--stuck); color: var(--surface); }
+.step .what { font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; padding-top: 2px; }
+.step.cur .what { font-size: 1rem; }
+.step:not(.cur) .what { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.step.pass:not(.cur) .what, .step.fail:not(.cur) .what { color: var(--muted); }
+.step .passline { margin-top: 10px; font-size: .95rem; line-height: 1.5; border-left: 3px solid var(--ship); padding-left: 12px; overflow-wrap: anywhere; }
+.step .passline b { color: var(--ship); font-weight: 600; }
+.step .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.stepbtn { font: inherit; font-size: .88rem; font-weight: 600; border-radius: 6px; padding: 7px 22px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
+.stepbtn.p { border-color: var(--ship); }
+.stepbtn.f { border-color: var(--stuck); }
+.stepbtn.p:hover, .stepbtn.p[aria-pressed="true"] { background: var(--ship); color: var(--surface); }
+.stepbtn.f:hover, .stepbtn.f[aria-pressed="true"] { background: var(--stuck); color: var(--surface); }
+.note { padding: 10px 14px; font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; border-radius: 0 8px 8px 0; }
+.note.trap { background: color-mix(in srgb, var(--test) 14%, transparent); border-left: 4px solid var(--test); }
+.note.broken { background: color-mix(in srgb, var(--stuck) 12%, transparent); border-left: 4px solid var(--stuck); }
+.note b { display: block; font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+.notes { display: flex; flex-direction: column; gap: 10px; }
+.dec { flex: none; border-top: 1px solid var(--line); padding: 12px 26px 14px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: var(--surface); }
+.dec .said { flex: 1 0 100%; font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
+.dec .said:empty { display: none; }
+.dec input { flex: 1 1 220px; min-width: 0; font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; }
+.dec input:focus-visible { outline: 2px solid var(--run); outline-offset: 1px; }
+.dec button { font: inherit; font-weight: 600; border-radius: 6px; padding: 9px 20px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); color: var(--fg); white-space: nowrap; }
+.dec button:hover { border-color: var(--muted); }
+.dec button.go { background: var(--ship); border-color: var(--ship); color: var(--surface); }
+.dec button:disabled, .dec input:disabled { opacity: .55; cursor: default; }
+.sec { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: none; background: none; padding: 0; border-radius: 0; max-height: none; }
+.sec > h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 600; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: var(--fg); }
+.sec > h3 small { font-family: var(--body); font-size: .82rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prose { font-size: 1rem; line-height: 1.65; max-width: 72ch; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.callout { border-left: 4px solid var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-radius: 0 8px 8px 0; padding: 14px 18px; max-width: 78ch; box-sizing: border-box; }
+.checks { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; max-width: 96ch; background: var(--surface); }
+.check { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; padding: 11px 14px; align-items: start; font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; }
+.check + .check { border-top: 1px solid var(--line); }
+.check .by { display: block; color: var(--muted); font-size: .78rem; margin-top: 2px; }
+.checks.tight .check { grid-template-columns: 70px minmax(0, 1fr); gap: 10px; padding: 7px 10px; font-size: .86rem; line-height: 1.4; }
+.checks.tight .pill { width: 70px; font-size: .66rem; }
+.pill { display: inline-block; text-align: center; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 999px; padding: 3px 0; width: 84px; color: var(--surface); }
+.pill.ok { background: var(--ship); }
+.pill.bad { background: var(--stuck); }
+.pill.na { background: var(--done); }
+.runs { display: flex; flex-direction: column; border-left: 2px solid var(--line); margin-left: 6px; }
+.run { position: relative; padding: 0 0 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.run::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--dot, var(--done)); border: 2px solid var(--surface); box-sizing: border-box; }
+.run.ok { --dot: var(--ship); }
+.run.bad { --dot: var(--stuck); }
+.run .head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: .92rem; }
+.run .head b { font-weight: 600; }
+.run .head time { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.run .pill { width: auto; padding: 2px 10px; }
+.run ul { margin: 0; padding-left: 20px; font-size: .94rem; line-height: 1.55; max-width: 80ch; }
+.run li { margin-bottom: 6px; overflow-wrap: anywhere; }
+.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px 16px; font-size: .95rem; margin: 0; max-width: 80ch; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.kv a, .pane a { color: var(--run); }
+.loglist { margin: 0; padding-left: 0; list-style: none; font-size: .9rem; line-height: 1.5; display: flex; flex-direction: column; gap: 10px; max-width: 90ch; }
+.loglist li { overflow-wrap: anywhere; white-space: pre-wrap; }
+.loglist time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
+/* Full-window screenshot: one dark look in both themes, so its colours are set outright. */
+#zoom { position: fixed; inset: 0; z-index: 30; background: #06090d; color: #e6ebf1; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+#zoom .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+#zoom .stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+#zoom .zfoot { flex: none; display: grid; grid-template-columns: 110px minmax(0, 1fr) 110px 110px; grid-template-areas: "prev cap next shut"; gap: 12px; align-items: center; padding: 12px 20px; border-top: 1px solid #2c3743; font-size: .94rem; }
+#zoom .zfoot p { grid-area: cap; margin: 0; text-align: center; overflow-wrap: anywhere; }
+#zoom .zfoot p small { display: block; color: #98a5b3; font-size: .8rem; font-variant-numeric: tabular-nums; }
+#zoom .zfoot button { font: inherit; color: #e6ebf1; background: #1a212a; border: 1px solid #4a5868; border-radius: 6px; padding: 9px 0; cursor: pointer; }
+#zoom .zfoot button:hover:not(:disabled) { border-color: #6fa8ea; }
+#zoom .zfoot button:focus-visible { outline-color: #6fa8ea; }
+#zoom .zfoot button:disabled { opacity: .4; cursor: default; }
+@media (max-width: 900px) {
+  #veil { padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  #sheet { width: 100%; height: 100%; border-radius: 0; }
+  #sheet > header { padding: 14px 16px 0; }
+  #sheet h2 { font-size: 1.2rem; }
+  .facts .links { margin-left: 0; flex-basis: 100%; }
+  .pane { padding: 20px 16px 28px; }
+  .pane.bench { display: flex; flex-direction: column; overflow-y: auto; }
+  .ev { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; padding: 16px; flex: none; }
+  .stagebox { flex: none; height: min(46vh, 380px); min-height: 0; }
+  .todo { overflow: visible; padding: 16px 16px 24px; flex: none; }
+  .dec { padding: 10px 16px 12px; }
+  .dec input { flex-basis: 100%; }
+  .dec button { flex: 1; padding-inline: 10px; }
+  .kv { grid-template-columns: 96px minmax(0, 1fr); }
+  #zoom .zfoot { grid-template-columns: 1fr 1fr 1fr; grid-template-areas: "cap cap cap" "prev next shut"; padding: 10px 16px; }
+}
+/* Search and filter bar: one row; the chips scroll sideways inside their own strip when they do not fit. */
+.fbar { display: flex; gap: 10px; align-items: center; min-width: 0; }
+#q { font: inherit; flex: 0 1 240px; min-width: 130px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+#q:focus-visible, .fchip:focus-visible, .shipbtn:focus-visible { outline: 2px solid var(--run); outline-offset: 1px; }
+.fchips { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: center; overflow-x: auto; padding: 3px; scrollbar-width: thin; }
+.fchip { font: inherit; font-size: .8rem; white-space: nowrap; flex: none; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; cursor: pointer; }
+.fchip:hover { border-color: var(--muted); }
+.fchip[aria-pressed="true"] { background: var(--run); border-color: var(--run); color: var(--surface); font-weight: 600; }
+.fkind { flex: none; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-left: 8px; }
+#clear { flex: none; white-space: nowrap; }
+@media (max-width: 700px) { .fbar { flex-wrap: wrap; } #q { flex: 1 1 160px; } .fchips { order: 3; flex-basis: 100%; } }
+/* Drag to ship */
+.card[draggable="true"] { cursor: grab; }
+.card.asked { border-style: dashed; border-left-style: solid; cursor: default; }
+.card.asked .why { color: var(--c); font-weight: 600; }
+section.target { outline: 2px dashed color-mix(in srgb, var(--c) 55%, transparent); outline-offset: -2px; }
+section.over { outline: 3px solid var(--c); outline-offset: -3px; background: color-mix(in srgb, var(--c) 22%, transparent); }
+.card .issue { color: var(--run); font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums; }
+.card .issue:hover { text-decoration: underline; }
+.card .issue:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+/* Subagents strip: above the tabs, so the same strip shows on every tab */
+:root { --mono: ui-monospace, "Cascadia Code", Consolas, monospace; }
+#sheet code { font-family: var(--mono); font-size: .88em; background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+.agents { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; background: var(--bg); scrollbar-width: thin; }
+.agents .lead { flex: none; display: flex; align-items: center; padding: 0 14px; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-right: 1px solid var(--line); }
+.agent { flex: 1 0 150px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 9px; align-items: center; padding: 7px 14px; }
+.agent + .agent { border-left: 1px solid var(--line); }
+.agent .dot { grid-row: 1 / 3; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .74rem; font-weight: 700; border: 2px solid var(--line); color: var(--muted); box-sizing: border-box; }
+.agent b { font-size: .86rem; font-weight: 600; white-space: nowrap; }
+.agent .r { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agent.ok .dot { background: var(--ship); border-color: var(--ship); color: var(--surface); }
+.agent.ok .r { color: var(--ship); }
+.agent.warn { background: color-mix(in srgb, var(--test) 9%, transparent); }
+.agent.warn .dot { border-color: var(--test); color: var(--test); }
+.agent.warn .r { color: var(--test); font-weight: 600; }
+.tab .badge { display: inline-block; margin-left: 6px; font-size: .7rem; font-weight: 700; background: var(--test); color: var(--surface); border-radius: 999px; padding: 0 7px; }
+.qline { margin: 0; font-size: .95rem; line-height: 1.45; max-width: 100ch; overflow-wrap: anywhere; }
+.qopt.rec { border-color: var(--ship); }
+.qopt.chosen { border: 2px solid var(--ship); background: color-mix(in srgb, var(--ship) 12%, var(--surface)); }
+.qopt.chosen:disabled, .plan .decn .qopt.chosen:disabled, .qbox .qopt.chosen:disabled { opacity: 1; color: var(--fg); }
+.qopt .pick { color: var(--ship); font-weight: 700; font-size: .78rem; }
+.chip.a { background: var(--ship); border-color: var(--ship); color: var(--surface); font-weight: 600; }
+.qans { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: .9rem; font-weight: 500; }
+.qans .linkbtn { padding: 2px 10px; font-size: .8rem; }
+.qline.done { color: var(--muted); }
+.plan .needs > h3 .q.a { background: var(--ship); }
+.plan .sec.needs.settled { border-color: color-mix(in srgb, var(--ship) 45%, var(--line)); background: color-mix(in srgb, var(--ship) 5%, var(--surface)); }
+.plan .decn.answered { border-color: color-mix(in srgb, var(--ship) 55%, var(--line)); }
+.plan .decn.answered .dnum { background: var(--ship); border-color: var(--ship); color: var(--surface); }
+.qopt .recm { color: var(--ship); font-weight: 600; font-size: .78rem; }
+
+/* Plan tab: goal, picture, decisions, ship order, risk and undo, done when, folds */
+.pane.plan { gap: 30px; }
+.plan .partno { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .72rem; border-radius: 4px; padding: 1px 6px; color: var(--surface); background: var(--p, var(--done)); white-space: nowrap; }
+.plan .goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 32px; align-items: center; flex: none; }
+.plan .goal p { font-family: var(--display); font-size: clamp(1.25rem, 2.3vw, 1.8rem); line-height: 1.25; font-weight: 600; margin: 0; max-width: 34ch; text-wrap: balance; overflow-wrap: anywhere; }
+.plan .goal p em { font-style: normal; color: var(--ship); }
+.plan .goal p s { text-decoration-color: var(--stuck); text-decoration-thickness: 2px; color: var(--muted); }
+.plan .stats { display: flex; flex-wrap: wrap; gap: 10px; }
+.plan .stat { border: 1px solid var(--line); border-radius: 8px; padding: 8px 16px; text-align: center; min-width: 86px; }
+.plan .stat b { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.plan .stat span { font-size: .76rem; color: var(--muted); }
+.plan .stat.you { border-color: var(--test); background: color-mix(in srgb, var(--test) 10%, transparent); }
+.plan .stat.you b { color: var(--test); }
+.plan .flow { display: flex; flex-direction: column; gap: 10px; }
+.plan .lane { --k: var(--stuck); display: grid; grid-template-columns: var(--lane); align-items: stretch; border: 1px solid var(--line); border-left: 4px solid var(--k); border-radius: 8px; padding: 12px 14px; background: color-mix(in srgb, var(--k) 5%, transparent); }
+.plan .lane.after { --k: var(--ship); }
+.plan .lane .when { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding-right: 10px; }
+.plan .lane .when b { font-family: var(--display); font-size: 1.05rem; }
+.plan .lane .when span { font-size: .74rem; font-weight: 600; color: var(--k); }
+.plan .node { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.plan .node .who { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.plan .node b { font-size: .95rem; font-weight: 600; line-height: 1.3; }
+.plan .node .s { font-size: .8rem; color: var(--muted); line-height: 1.35; }
+.plan .node .gate { margin-top: 5px; font-size: .78rem; line-height: 1.35; border-radius: 6px; padding: 4px 8px; display: flex; gap: 6px; align-items: baseline; }
+.plan .node .gate.no { border: 1px dashed var(--stuck); color: var(--stuck); }
+.plan .node .gate.lock { border: 1px dashed var(--run); color: var(--run); }
+.plan .lane.today .node.hot { border-color: var(--stuck); }
+.plan .lane.after .node.hot { border-color: var(--ship); }
+.plan .arrow { display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 5px; padding: 0 6px; color: var(--k); min-width: 0; }
+.plan .arrow span { font-size: .76rem; font-weight: 600; text-align: center; line-height: 1.25; }
+.plan .arrow i { display: block; height: 2px; background: currentColor; position: relative; margin-right: 6px; }
+.plan .arrow i::after { content: ""; position: absolute; right: -6px; top: -4px; border: 5px solid transparent; border-left: 7px solid currentColor; border-right: 0; }
+.plan .sec.needs { border: 1px solid color-mix(in srgb, var(--test) 55%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--test) 7%, var(--surface)); padding: 16px 18px 18px; gap: 14px; }
+.plan .needs > h3 .q { font-family: var(--body); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: var(--test); color: var(--surface); border-radius: 4px; padding: 2px 8px; }
+.plan .decs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 12px; }
+.plan .decn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.plan .decn .dtop { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.plan .decn .dnum { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--test); color: var(--test); font-weight: 700; font-size: .8rem; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.plan .decn .kind { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.plan .decn h4 { font-family: var(--display); font-size: 1.05rem; font-weight: 600; margin: 0; line-height: 1.3; text-wrap: balance; overflow-wrap: anywhere; }
+.plan .decn ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: .86rem; line-height: 1.4; }
+.plan .decn li { padding-left: 22px; position: relative; overflow-wrap: anywhere; }
+.plan .decn li::before { content: "✓"; color: var(--ship); font-weight: 700; position: absolute; left: 0; }
+.plan .decn li.x::before { content: "✕"; color: var(--stuck); }
+.plan .decn .qopts { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); max-width: none; }
+.plan .decn .qopt { background: var(--bg); }
+.plan .decn .qrow input { background: var(--bg); }
+.plan .decn .said { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
+.plan .decn .said:empty { display: none; }
+.plan .decn :disabled { opacity: .55; cursor: default; }
+.plan .order { display: flex; align-items: stretch; }
+.plan .stop { position: relative; padding: 26px 8px 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 0; }
+.plan .stop.now, .plan .stop.end { flex: 0 0 150px; }
+.plan .stop::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 2px; background: var(--line); }
+.plan .stop:first-child::before { left: 16px; }
+.plan .stop:last-child::before { right: calc(100% - 16px); }
+.plan .stop::after { content: ""; position: absolute; left: 8px; top: 1px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 3px solid var(--k, var(--done)); box-sizing: border-box; }
+.plan .stop.now { --k: var(--test); }
+.plan .stop.now::after { background: var(--test); }
+.plan .stop.end { --k: var(--ship); }
+.plan .stop .t { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--k, var(--muted)); }
+.plan .stop .h { font-family: var(--display); font-weight: 600; font-size: 1rem; line-height: 1.25; }
+.plan .stop .d { font-size: .82rem; color: var(--muted); line-height: 1.4; }
+.plan .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; }
+.plan .part { border: 1px solid var(--line); border-top: 3px solid var(--p); border-radius: 8px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 7px; background: var(--surface); min-width: 0; overflow-wrap: anywhere; }
+.plan .part .hd { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.plan .part .hd b { font-size: .95rem; font-weight: 600; }
+.plan .part .hd .sz { margin-left: auto; font-size: .7rem; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+.plan .part p { margin: 0; font-size: .84rem; line-height: 1.4; }
+.plan .part .w { font-size: .76rem; color: var(--muted); }
+.plan .prog { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 2px; }
+.plan .prog span { font-size: .66rem; color: var(--muted); text-align: center; padding-top: 6px; border-top: 4px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan .prog .on { border-top-color: var(--ship); color: var(--ship); font-weight: 600; }
+.plan .prog .next { border-top-color: var(--test); color: var(--test); font-weight: 600; }
+.plan .two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
+.plan .two.one { grid-template-columns: minmax(0, 1fr); max-width: 100ch; }
+.plan .box { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+.plan .box > h4 { margin: 0; padding: 9px 14px; font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--k); background: color-mix(in srgb, var(--k) 9%, transparent); border-bottom: 1px solid var(--line); }
+.plan .box.risk { --k: var(--stuck); }
+.plan .box.undo { --k: var(--run); }
+.plan .row { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); gap: 8px; padding: 9px 14px; font-size: .86rem; line-height: 1.4; align-items: start; overflow-wrap: anywhere; }
+.plan .row + .row { border-top: 1px solid var(--line); }
+.plan .row i { font-style: normal; color: var(--muted); text-align: center; }
+.plan .row b { font-weight: 600; }
+.plan .row .fix { color: var(--muted); }
+.plan .box.undo .row { grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+.plan .box.undo .row .who { display: flex; flex-wrap: wrap; gap: 4px; }
+.plan .box.undo .foot { padding: 9px 14px; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); margin-top: auto; }
+.plan .done { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 0 18px; margin: 0; padding: 0; list-style: none; max-width: 130ch; }
+.plan .done li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 9px; align-items: start; font-size: .9rem; line-height: 1.4; padding: 7px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.plan .done li::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); margin-top: 2px; box-sizing: border-box; font-size: .62rem; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--surface); }
+.plan .done li.met::before { content: "✓"; background: var(--ship); border-color: var(--ship); }
+.plan .done li.unmet::before { content: "✕"; background: var(--stuck); border-color: var(--stuck); }
+.plan .done small { display: block; color: var(--muted); font-size: .78rem; }
+.plan .meter { flex: 1 1 140px; max-width: 220px; height: 6px; border-radius: 3px; background: var(--line); align-self: center; overflow: hidden; display: block; }
+.plan .meter i { display: block; height: 100%; background: var(--ship); }
+.plan .outs { display: flex; flex-wrap: wrap; gap: 8px; }
+.plan .out { font-size: .84rem; border: 1px dashed var(--line); border-radius: 999px; padding: 4px 12px; color: var(--muted); }
+.plan .out b { color: var(--fg); font-weight: 500; text-decoration: line-through; text-decoration-color: var(--muted); }
+.plan .folds { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.plan .folds details + details { border-top: 1px solid var(--line); }
+.plan .folds summary { cursor: pointer; padding: 11px 14px; font-size: .92rem; font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; list-style: none; }
+.plan .folds summary::-webkit-details-marker { display: none; }
+.plan .folds summary::before { content: "▸"; color: var(--muted); }
+.plan .folds details[open] > summary::before { content: "▾"; }
+.plan .folds summary:focus-visible { outline: 2px solid var(--run); outline-offset: -2px; }
+.plan .folds summary small { font-weight: 400; color: var(--muted); font-size: .82rem; }
+.plan .folds .in { padding: 2px 16px 16px 36px; font-size: .92rem; line-height: 1.55; max-width: 92ch; display: flex; flex-direction: column; gap: 12px; }
+.plan .folds ol, .plan .folds ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
+.plan .folds .prose { font-size: .95rem; }
+.plan .decn .qopt.chosen:disabled { opacity: 1; }
+@media (max-width: 1000px) {
+  .plan .lane { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .plan .lane .when { flex-direction: row; align-items: baseline; gap: 10px; padding: 0 0 4px; }
+  .plan .arrow { flex-direction: row; justify-content: flex-start; align-items: center; gap: 10px; padding: 0 0 0 18px; }
+  .plan .arrow i { order: -1; width: 2px; height: 18px; margin: 0 0 6px; flex: none; }
+  .plan .arrow i::after { right: auto; left: -4px; top: auto; bottom: -6px; border: 5px solid transparent; border-top: 7px solid currentColor; border-bottom: 0; }
+  .plan .arrow span { text-align: left; }
+  .plan .two, .plan .goal { grid-template-columns: minmax(0, 1fr); }
+  .plan .order { flex-direction: column; }
+  .plan .stop, .plan .stop.now, .plan .stop.end { flex: none; padding: 0 0 18px 34px; }
+  .plan .stop::before, .plan .stop:first-child::before, .plan .stop:last-child::before { left: 15px; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
+  .plan .stop:last-child::before { bottom: auto; height: 10px; }
+  .plan .stop::after { left: 8px; top: 2px; }
+}
+@media (max-width: 900px) {
+  .plan .sec.needs { padding: 14px 12px; }
+  .plan .stat { flex: 1; }
+  .plan .row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .plan .row i { display: none; }
+  .plan .folds .in { padding-left: 16px; }
+}
+/* A session's question for the owner */
+.chip.q { background: var(--test); border-color: var(--test); color: var(--surface); font-weight: 600; }
+.qbox { flex: none; max-height: 42%; overflow-y: auto; padding: 16px 26px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--test) 10%, var(--surface)); display: flex; flex-direction: column; gap: 12px; }
+.qhead { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: .8rem; }
+.qtext { margin: 0; font-size: 1.05rem; line-height: 1.5; font-weight: 500; max-width: 90ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 10px; max-width: 1100px; }
+.qopt { font: inherit; text-align: left; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.qopt b { font-weight: 600; font-size: .98rem; }
+.qopt span { font-size: .86rem; line-height: 1.45; color: var(--muted); overflow-wrap: anywhere; }
+.qopt:hover:not(:disabled) { border-color: var(--test); }
+.qopt:focus-visible, .qrow button:focus-visible, .qrow input:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+.qrow { display: flex; flex-wrap: wrap; gap: 10px; max-width: 1100px; }
+.qrow input { flex: 1 1 240px; min-width: 0; font: inherit; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; }
+.qrow button { font: inherit; font-weight: 600; border-radius: 6px; padding: 8px 18px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); color: var(--fg); white-space: nowrap; }
+.qrow button:hover:not(:disabled) { border-color: var(--muted); }
+.qbox :disabled { opacity: .55; cursor: default; }
+.qbox .said { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
+.qbox .said:empty { display: none; }
+/* Narrow screens: the whole card scrolls as one page and the decision bar stays at the bottom. */
+@media (max-width: 900px) {
+  #sheet { overflow-y: auto; }
+  #sheet > header, #sheet > .qbox, #sheet > .pane { flex: none; }
+  #sheet > .pane, #sheet > .pane.bench { overflow: visible; }
+  .qbox { padding: 12px 16px; max-height: none; overflow: visible; }
+  .dec { position: sticky; bottom: 0; }
+}
+.colmsg { font-size: .8rem; color: var(--stuck); overflow-wrap: anywhere; }
+.shipbtn { font: inherit; font-size: .72rem; font-weight: 600; margin-left: auto; color: var(--ship); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px; cursor: pointer; }
+.shipbtn:hover { border-color: var(--ship); }
+.shipbtn.sure { background: var(--ship); border-color: var(--ship); color: var(--surface); }
+.top { display: flex; gap: 8px; align-items: baseline; }
+.num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .85rem; flex: none; }
+.title { font-weight: 600; overflow-wrap: anywhere; }
+.card .title { font-weight: 500; font-size: .92rem; }
+.card { padding: 8px 10px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: .75rem; color: var(--muted); }
+.chip { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+.chip.tag { color: hsl(var(--h) 55% 38%); border-color: hsl(var(--h) 45% 60%); font-weight: 600; }
+.chip.ok { color: var(--ship); border-color: var(--ship); }
+.chip.bad { color: var(--stuck); border-color: var(--stuck); }
+.why { font-size: .78rem; color: var(--muted); overflow-wrap: anywhere; }
+.chip.col { color: var(--c); border-color: var(--c); }
+.next { font-size: .88rem; overflow-wrap: anywhere; }
+.body { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; font-size: .88rem; overflow-wrap: anywhere; }
+.body h3 { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 2px; font-weight: 600; }
+.body p, .body ul { margin: 0; white-space: pre-wrap; }
+.body ul { padding-left: 18px; white-space: normal; }
+.body a { color: var(--run); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Board <span>V2</span></h1>
+    <span id="stamp">Loading cards…</span>
+    <span id="note" hidden></span>
+  </header>
+  <div class="fbar" role="search">
+    <input id="q" type="search" placeholder="Search cards ( / )" aria-label="Search cards by number, title, repo, label, status or next step" autocomplete="off">
+    <div class="fchips" id="chips" role="group" aria-label="Filters"></div>
+    <button id="clear" class="more" type="button" disabled>Clear filters</button>
+  </div>
+  <div class="board" id="board"></div>
+</div>
+
+<script>
+const COLS = [["Backlog", "run"], ["Blocked", "stuck", "Stuck"], ["Planning", "run"], ["Plan review", "plan", "Needs you: planning"],
+  ["In progress", "run"], ["Human test", "test", "Needs you: testing"], ["Ship it", "run"],
+  ["Deploy complete", "ship", "Shipped"], ["Done", "done", "Archived"]];
+const EMPTY = { "Plan review": "No plans waiting for you.", "Human test": "Nothing waiting for your test.", "Blocked": "Nothing is stuck." };
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+function block(parent, label, value) {
+  if (!value || (Array.isArray(value) && !value.length)) return;
+  const d = el("div"); d.append(el("h3", "", label));
+  if (Array.isArray(value)) { const ul = el("ul"); value.forEach(v => ul.append(el("li", "", String(v)))); d.append(ul); }
+  else if (/^https:\/\//.test(value)) { const a = el("a", "", value); a.href = value; a.target = "_blank"; a.rel = "noopener"; const p = el("p"); p.append(a); d.append(p); }
+  else d.append(el("p", "", String(value)));
+  parent.append(d);
+}
+
+let DB = null, shown = null;
+function chips(c) {
+  const meta = el("div", "meta");
+  meta.append(el("span", "chip col", c.column || "?"));
+  labels(meta, c);
+  if (c.repo) meta.append(el("span", "chip", String(c.repo).split("/").pop()));
+  if (c.goTo === "all the way") meta.append(el("span", "chip", "all the way"));
+  if (c.source === "dsh") meta.append(el("span", "chip", "old board"));
+  if (c.updatedAt) meta.append(el("span", "", "updated " + String(c.updatedAt).slice(0, 10)));
+  return meta;
+}
+const WAITING = ["Plan review", "Human test", "Blocked"];
+const AGENT_WORD = { passed: "passed", failed: "failed", unclear: "unclear", fixed: "fix proved", reproduced: "reproduced", "not-reproduced": "not reproduced" };
+function labels(meta, c) {
+  (c.labels || []).forEach(l => { const t = el("span", "chip tag", l); let h = 0; for (const ch of String(l)) h = (h * 31 + ch.charCodeAt(0)) % 360; t.style.setProperty("--h", h); meta.append(t); });
+  const t = c.agents && c.agents.tester;
+  if (t) meta.append(el("span", "chip " + (t === "passed" ? "ok" : "bad"), t === "passed" ? "Tested" : "Test " + (AGENT_WORD[t] || t)));
+  const a = c.agents || {}, bad = r => !["passed", "fixed", "reproduced"].includes(r);
+  if (a.reviewer && c.column === "Human test") meta.append(el("span", "chip " + (bad(a.reviewer) ? "bad" : "ok"), a.reviewer === "passed" ? "Reviewed" : "Review " + (AGENT_WORD[a.reviewer] || a.reviewer)));
+  if (a.critic && ["Planning", "Plan review"].includes(c.column)) meta.append(el("span", "chip " + (bad(a.critic) ? "bad" : "ok"), a.critic === "passed" ? "Plan critiqued" : "Critique " + (AGENT_WORD[a.critic] || a.critic)));
+  if (a.reproducer && (c.labels || []).includes("BUG")) meta.append(el("span", "chip " + (bad(a.reproducer) ? "bad" : "ok"), a.reproducer === "fixed" ? "Fix proved" : "Bug " + (AGENT_WORD[a.reproducer] || a.reproducer)));
+  if (c.goTo === "all the way") meta.append(el("span", "chip", "all the way"));
+  if (WAITING.includes(c.column) && c.since) {
+    const days = Math.floor((Date.now() - Date.parse(c.since)) / 864e5);
+    if (days >= 0) meta.append(el("span", "chip" + (days >= 3 ? " bad" : ""), days === 0 ? "today" : days + "d waiting"));
+  }
+}
+function card(c) {
+  const d = el("div", "card"); d.dataset.id = c.id; d.tabIndex = 0; d.setAttribute("role", "button");
+  const top = el("div", "top"); top.append(el("span", "num", "#" + (c.n ?? c.id)), el("span", "title", c.title || "(no title)"));
+  const meta = el("div", "meta");
+  if (hasQuestion(c)) { const k = openQs(c).length; meta.append(el("span", "chip q", k > 1 ? k + " questions for you" : "Question for you")); }
+  labels(meta, c);
+  const is = issueOf(c.issue);
+  if (is && is.n && /^https:\/\//.test(is.url || "")) {
+    // The issue link opens GitHub; it must not open the card or start a drag.
+    const a = el("a", "issue", "#" + is.n); a.href = is.url; a.target = "_blank"; a.rel = "noopener"; a.draggable = false;
+    a.title = "GitHub issue #" + is.n; a.setAttribute("aria-label", "GitHub issue " + is.n);
+    a.addEventListener("click", e => e.stopPropagation());
+    a.addEventListener("keydown", e => e.stopPropagation());
+    a.addEventListener("dragstart", e => { e.preventDefault(); e.stopPropagation(); });
+    meta.append(a);
+  }
+  if (c.repo) meta.append(el("span", "", String(c.repo).split("/").pop()));
+  d.append(top, meta);
+  if (c.column === "Blocked" && c.stuck) d.append(el("div", "why", c.stuck.length > 90 ? c.stuck.slice(0, 90) + "…" : c.stuck));
+  if (WEAK.has(c.id)) d.append(el("div", "why", "Matched in its status or next step"));
+  if (PENDING[c.id]) { d.classList.add("asked"); d.append(el("div", "why", "Asked the Router…")); }
+  else {
+    // Any card drags to any other column. A drop only tells the Router; the page never writes the card's column.
+    d.draggable = true;
+    d.addEventListener("dragstart", e => { DRAG = c; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", "#" + (c.n ?? c.id)); for (const name in boxes) if (name !== colOf(c)) boxes[name].sec.classList.add("target"); });
+    d.addEventListener("dragend", () => { DRAG = null; dragEnd = Date.now(); for (const name in boxes) boxes[name].sec.classList.remove("target", "over"); repaint(); });
+  }
+  if (!PENDING[c.id] && c.column === "Human test") {
+    // The keyboard route to shipping, since a drag has none.
+    const b = el("button", "shipbtn", "Ship it"); b.type = "button"; let sure = 0;
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      if (sure) { clearTimeout(sure); shipAsk(c, "Ship it pressed on the card on the board."); return; }
+      b.textContent = "Confirm ship"; b.classList.add("sure");
+      sure = setTimeout(() => { sure = 0; b.textContent = "Ship it"; b.classList.remove("sure"); }, 5000);
+    });
+    b.addEventListener("keydown", e => e.stopPropagation());
+    meta.append(b);
+  }
+  d.addEventListener("click", () => { if (Date.now() - dragEnd > 400) openCard(c); });
+  d.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(c); } });
+  return d;
+}
+let CM = null;
+async function ask(c, text, msg, where) {
+  if (!CM) { msg.textContent = "The Router can't be reached from this view."; return; }
+  msg.textContent = "Sending…";
+  try {
+    const st = await CM.canSendToClaude();
+    if (st !== "available") { msg.textContent = st === "no_session" ? "No Router is watching the board. In the Router, paste this page's link and ask it to watch." : "Sending to the Router isn't offered here."; return; }
+    // With no card (a whole-column request) the text goes as written, anchored to the element given.
+    const at = c ? document.querySelector('.card[data-id="' + CSS.escape(c.id) + '"]') || $("board") : where || $("board");
+    await CM.sendToClaude({ anchor: await CM.anchorFor(at), text: c ? "Card #" + (c.n ?? c.id) + ": " + text : text });
+    msg.textContent = "Sent. The Router replies in its own session.";
+  } catch (e) { msg.textContent = "Not sent (" + (e && e.code || "error") + ")."; }
+}
+function sec(parent, title, note) {
+  const s = el("section", "sec"), h = el("h3", "", title);
+  if (note) h.append(el("small", "", note));
+  s.append(h); parent.append(s); return s;
+}
+function prose(parent, text) { const p = el("p", "prose", text); parent.append(p); return p; }
+const when = t => String(t || "").slice(0, 16).replace("T", " ");
+
+/* parser:start */
+// Turns the "how to test" text into steps. Numbered lines are steps, split at "Pass:"; "Traps:" and "Broken if:" lines are notes.
+function parseHow(text) {
+  const out = { steps: [], traps: "", brokenIf: "", stack: "", intro: "" };
+  const lines = String(text || "").replace(/\r/g, "").split("\n").map(l => l.trim());
+  const local = (lines[0] || "").match(/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]|[\w-]+\.localhost)(?::\d+)?(?:\/[^\s,;)]*)?/i);
+  if (local) out.stack = local[0];
+  let into = "intro", step = null;
+  lines.forEach(line => {
+    if (!line) return;
+    let m;
+    if ((m = line.match(/^(\d{1,2})[.)]\s+(.+)$/))) { step = { n: m[1], raw: m[2] }; out.steps.push(step); into = "step"; }
+    else if ((m = line.match(/^Traps?:\s*(.*)$/i))) { out.traps = m[1]; into = "traps"; }
+    else if ((m = line.match(/^Broken if:\s*(.*)$/i))) { out.brokenIf = m[1]; into = "brokenIf"; }
+    else if (into === "step") step.raw += "\n" + line;
+    else out[into] += (out[into] ? "\n" : "") + line;
+  });
+  if (!out.steps.length && out.intro) { out.steps.push({ n: "1", raw: out.intro }); out.intro = ""; }
+  out.intro = out.intro.replace(/^HOW TO TEST\s*:?\s*/i, "").replace(/^\(([\s\S]*)\)$/, "$1").trim();
+  out.steps = out.steps.map(s => {
+    const i = s.raw.search(/\bPass:/);
+    return i < 0 ? { n: s.n, text: s.raw.trim(), pass: "" } : { n: s.n, text: s.raw.slice(0, i).trim(), pass: s.raw.slice(i).replace(/^Pass:\s*/, "").trim() };
+  });
+  return out;
+}
+/* parser:end */
+const isHow = t => /^\s*HOW TO TEST/i.test(t || "");
+const lines = v => Array.isArray(v) ? v.join("\n") : String(v || "");
+function testData(c, f) {
+  const text = c.how || f.how || [f.next, c.next].find(isHow) || "", T = parseHow(text);
+  if (Array.isArray(f.steps) && f.steps.length) T.steps = f.steps.map((s, i) => typeof s === "string" ? { n: String(i + 1), text: s, pass: "" } : { n: String(i + 1), text: String(s.text || ""), pass: String(s.pass || "") });
+  if (f.traps) T.traps = lines(f.traps);
+  if (f.brokenIf) T.brokenIf = lines(f.brokenIf);
+  const stack = f.stack || c.stack; if (/^https?:\/\//.test(stack || "")) T.stack = stack;
+  return T;
+}
+function prOf(c) {
+  const v = c.pr; if (!v) return null;
+  const repo = /^[\w.-]+\/[\w.-]+$/.test(c.repo || "") ? c.repo : "";
+  let n = typeof v === "object" ? v.number ?? v.n : /^#?\d+$/.test(String(v)) ? String(v).replace("#", "") : (String(v).match(/\/pull\/(\d+)/) || [])[1];
+  let url = typeof v === "object" ? v.url : /^https:\/\//.test(String(v)) ? String(v) : "";
+  if (!n && url) n = (url.match(/\/pull\/(\d+)/) || [])[1];
+  if (!url && n && repo) url = "https://github.com/" + repo + "/pull/" + n;
+  if (!/^https:\/\//.test(url || "")) url = "";
+  return n || url ? { n, url, text: url ? url.replace(/^https:\/\/github\.com\//, "") : "#" + n } : { text: String(v) };
+}
+function issueOf(v) {
+  if (!v) return null;
+  if (typeof v === "object") return { n: v.n ?? v.number, url: v.url };
+  const s = String(v), url = (s.match(/'url':\s*'(https:\/\/[^']+)'/) || s.match(/^(https:\/\/\S+)$/) || [])[1];
+  const n = (s.match(/'number':\s*(\d+)/) || s.match(/^#?(\d+)$/) || (url || "").match(/\/issues\/(\d+)/) || [])[1];
+  return n || url ? { n, url } : { text: s };
+}
+function factsBlock(parent, c, f) {
+  const s = sec(parent, "Details"), dl = el("dl", "kv");
+  const add = (k, v, href) => { if (!v) return; const dd = el("dd"); if (href && /^https:\/\//.test(href)) { const a = el("a", "", v); a.href = href; a.target = "_blank"; a.rel = "noopener"; dd.append(a); } else dd.textContent = v; dl.append(el("dt", "", k), dd); };
+  add("Column", c.column); add("Repo", c.repo);
+  const pr = prOf(c); if (pr) add("Pull request", pr.text, pr.url);
+  const is = issueOf(c.issue || f.issue); if (is) add("Issue", is.n ? "#" + is.n : is.url || is.text, is.url);
+  add("Branch", f.branch);
+  add("Goes to", c.goTo === "all the way" ? "All the way, no review" : "Stops for your review");
+  add("Created", when(f.created));
+  if (c.since) add("In column since", when(c.since));
+  add("Updated", when(c.updatedAt));
+  add("Session", c.session);
+  s.append(dl);
+  if (c.agents && Object.keys(c.agents).length) {
+    const a = sec(parent, "Subagents run"), row = el("div", "meta");
+    Object.entries(c.agents).forEach(([name, r]) => row.append(el("span", "chip " + (["passed", "fixed", "reproduced"].includes(r) ? "ok" : "bad"), name[0].toUpperCase() + name.slice(1) + ": " + (AGENT_WORD[r] || r))));
+    a.append(row);
+  }
+}
+const checkList = f => f.results || (f.checks || []).map(t => ({ text: t, state: null }));
+function checksBlock(parent, f, tight) {
+  const list = checkList(f);
+  if (!list.length) return;
+  const met = list.filter(r => r.state === "met").length, tried = list.some(r => r.state);
+  let note = tried ? met + " of " + list.length + " met" : list.length + " to pass";
+  if (f.testRun && !tight) note += " · tester " + (AGENT_WORD[f.testRun.state] || f.testRun.state) + (f.testRun.at ? " " + when(f.testRun.at) : "") + (f.testRun.rounds > 1 ? ", round " + f.testRun.rounds : "");
+  const s = sec(parent, tight ? "The tester's checks" : "Checks", note), box = el("div", "checks" + (tight ? " tight" : ""));
+  list.forEach(r => {
+    const row = el("div", "check"), cls = r.state === "met" ? "ok" : r.state ? "bad" : "na";
+    const txt = el("div", "", r.text); if (r.by && !tight) txt.append(el("span", "by", "checked by " + r.by));
+    row.append(el("span", "pill " + cls, r.state === "met" ? "Met" : r.state ? "Not met" : "To test"), txt); box.append(row);
+  });
+  s.append(box);
+}
+function runsBlock(parent, f) {
+  const runs = (f.verdicts || []).filter(v => !/marked the checks/.test(v)).map(v => {
+    const m = String(v).match(/^(\d{4}-\d\d-\d\d[ T]\d\d:\d\d)\s+([\s\S]*)$/), rest = m ? m[2] : String(v);
+    const k = rest.match(/^(Subagent test|Subagent review|Plan critique|Card-tester|Reproducer|Tester[^:]*?)\s*:?\s*(PASS|FAIL|FIXED|NOT REPRODUCED|REPRODUCED|UNCLEAR)?\b[:.]?\s*([\s\S]*)$/i);
+    const kind = k ? k[1].replace(/^Subagent /, "").replace(/^Card-tester$/i, "test").replace(/^./, x => x.toUpperCase()) : "Run";
+    return { at: m ? m[1] : "", kind, verdict: k && k[2] ? k[2].toUpperCase() : "", text: k ? k[3] : rest };
+  });
+  if (!runs.length) return false;
+  const s = sec(parent, "Test runs", "newest first"), box = el("div", "runs");
+  runs.forEach(r => {
+    const good = ["PASS", "FIXED", "REPRODUCED"].includes(r.verdict), bad = ["FAIL", "NOT REPRODUCED", "UNCLEAR"].includes(r.verdict);
+    const row = el("div", "run" + (good ? " ok" : bad ? " bad" : "")), head = el("div", "head");
+    head.append(el("b", "", r.kind)); if (r.verdict) head.append(el("span", "pill " + (good ? "ok" : "bad"), r.verdict)); head.append(el("time", "", r.at));
+    row.append(head);
+    const parts = r.text.split(/;\s*(?=BUG:)/).map(x => x.replace(/^BUG:\s*/, "").trim()).filter(Boolean);
+    if (parts.length) { const ul = el("ul"); parts.forEach(p => ul.append(el("li", "", p))); row.append(ul); }
+    box.append(row);
+  });
+  s.append(box); return true;
+}
+
+// V is the open card's view: the card, its detail row, the owner's saved step results, and what is showing.
+let V = null;
+function fitShot(img, box) {
+  const set = () => { const r = img.naturalWidth / (img.naturalHeight || 1); box.classList.toggle("wide", r > 4); box.classList.toggle("tall", r < 0.3); };
+  if (img.complete && img.naturalWidth) set(); else img.addEventListener("load", set);
+}
+function zoom(shots, i) {
+  const old = $("zoom"); if (old) old.remove();
+  if (V) { V.shot = i; if (V.drawEv) V.drawEv(); }
+  const z = el("div"); z.id = "zoom"; z.setAttribute("role", "dialog"); z.setAttribute("aria-label", "Screenshot");
+  const stage = el("div", "stage"), img = el("img"); img.src = shots[i].url; img.alt = shots[i].label || ""; stage.append(img); fitShot(img, stage);
+  const foot = el("div", "zfoot"), cap = el("p", "", shots[i].label || "No caption.");
+  cap.append(el("small", "", "Screenshot " + (i + 1) + " of " + shots.length));
+  const prev = el("button", "", "Previous"), next = el("button", "", "Next"), shut = el("button", "", "Close");
+  prev.type = next.type = shut.type = "button"; prev.style.gridArea = "prev"; next.style.gridArea = "next"; shut.style.gridArea = "shut";
+  prev.disabled = next.disabled = shots.length < 2;
+  prev.addEventListener("click", () => { zoom(shots, (i + shots.length - 1) % shots.length); const b = $("zoom").querySelector("button"); if (b) b.focus(); });
+  next.addEventListener("click", () => zoom(shots, (i + 1) % shots.length));
+  shut.addEventListener("click", closeZoom); stage.addEventListener("click", closeZoom);
+  foot.append(prev, cap, next, shut); z.append(stage, foot);
+  z.dataset.i = i; z._shots = shots; document.body.append(z); (next.disabled ? shut : next).focus();
+}
+// Focus can be pulled out of the frame by the host after a key press, so it is put back now and again shortly after.
+function holdFocus(find) {
+  const go = () => { const t = find(); if (t && t.isConnected) { try { window.focus(); } catch (e) {} t.focus({ preventScroll: true }); } };
+  go(); setTimeout(go, 60); setTimeout(go, 300);
+}
+function closeZoom() { const z = $("zoom"); if (!z) return; z.remove(); holdFocus(() => document.querySelector("#sheet .stagebox") || $("close")); }
+
+function saveReview() {
+  const v = V; if (!v || !DB) { if (v && v.saveEl) v.saveEl.textContent = "Not saved: the cards can't be reached."; return; }
+  v.dirty = true; if (v.saving) return;
+  v.saving = true;
+  (async () => {
+    while (v.dirty) {
+      v.dirty = false;
+      try { await DB.doc("cards/" + v.c.id + "/review/owner").set({ steps: { ...v.rev }, updatedAt: new Date().toISOString() }); v.saveMsg = "Saved. You can stop and come back."; }
+      catch (e) { v.saveMsg = "Not saved (" + (e && e.code || "error") + "). Your results stay on screen until you close the card."; }
+    }
+    v.saving = false; if (V === v && v.saveEl) v.saveEl.textContent = v.saveMsg;
+  })();
+}
+function shotsOf(f) { return (f.proof || []).map(p => typeof p === "string" ? { label: p } : p); }
+function drawTest(pane) {
+  pane.classList.add("bench");
+  const v = V, ev = el("div", "ev"), todo = el("div", "todo");
+  pane.append(ev, todo);
+  v.drawEv = () => {
+    if (V !== v) return;
+    const all = shotsOf(v.f), shots = all.filter(p => p.url), rest = all.filter(p => !p.url);
+    ev.replaceChildren();
+    if (shots.length) {
+      v.shot = Math.min(v.shot, shots.length - 1);
+      const s = shots[v.shot];
+      ev.append(el("div", "label", "Evidence · screenshot " + (v.shot + 1) + " of " + shots.length + (s.step ? " · step " + s.step : "")));
+      const big = el("button", "stagebox"); big.type = "button"; big.setAttribute("aria-label", "Open full window: " + (s.label || "screenshot"));
+      const img = el("img"); img.src = s.url; img.alt = s.label || ""; big.append(img); fitShot(img, big);
+      big.addEventListener("click", () => zoom(shots, v.shot));
+      ev.append(big, el("p", "cap", s.label || "No caption."));
+      if (shots.length > 1) {
+        const film = el("div", "film");
+        shots.forEach((p, i) => {
+          const b = el("button"); b.type = "button"; b.setAttribute("aria-label", "Show screenshot " + (i + 1) + ": " + (p.label || "")); b.title = p.label || "";
+          if (i === v.shot) b.setAttribute("aria-current", "true");
+          const t = el("img"); t.src = p.url; t.alt = ""; t.loading = "lazy"; b.append(t);
+          b.addEventListener("click", () => { v.shot = i; v.drawEv(); const n = ev.querySelectorAll(".film button")[i]; if (n) n.focus(); });
+          film.append(b);
+        });
+        ev.append(film);
+      }
+    } else {
+      ev.append(el("div", "label", "Evidence"));
+      ev.append(el("div", "noev", v.loaded ? "No screenshots for this card. The tester's checks are below." : "Loading the evidence…"));
+      checksBlock(ev, v.f);
+    }
+    if (rest.length) { const ul = el("ul", "loglist"); rest.forEach(p => ul.append(el("li", "", p.label + " (image is on the PC, not uploaded)"))); ev.append(ul); }
+  };
+  v.drawTodo = focusBtn => {
+    if (V !== v) return;
+    const T = testData(v.c, v.f), steps = T.steps;
+    todo.replaceChildren();
+    if (!steps.some(s => s.n === v.cur)) v.cur = (steps.find(s => !v.rev[s.n]) || steps[0] || {}).n || null;
+    const done = steps.filter(s => v.rev[s.n]).length;
+    const s0 = sec(todo, "Your test", steps.length ? done + " of " + steps.length + " done" : "");
+    if (T.intro) { const h = el("div", "hint"); String(T.intro).split(/(https?:\/\/[^\s,)]+)/).forEach((p, i) => { if (i % 2) { const u = p.replace(/[.;:]+$/, ""), a = el("a", "", u); a.href = u; a.target = "_blank"; a.rel = "noopener"; h.append(a, p.slice(u.length)); } else if (p) h.append(p); }); s0.append(h); }
+    if (!steps.length) s0.append(el("p", "prose", v.loaded ? "No test steps are written for this card. The Plan tab says what it is." : "Loading…"));
+    const box = el("div", "steps"); let focusMe = null;
+    steps.forEach(s => {
+      const st = v.rev[s.n], cur = v.cur === s.n;
+      const row = el("div", "step" + (cur ? " cur" : "") + (st ? " " + st : ""));
+      const mark = el("span", "mark", st === "pass" ? "✓" : st === "fail" ? "✕" : s.n);
+      if (st) mark.setAttribute("aria-label", "Step " + s.n + (st === "pass" ? " passed" : " failed"));
+      const body = el("div"); body.append(el("div", "what", s.text));
+      if (cur) {
+        if (s.pass) { const pl = el("div", "passline"); pl.append(el("b", "", "Pass when: "), document.createTextNode(s.pass)); body.append(pl); }
+        const btns = el("div", "btns");
+        [["pass", "Pass", "p"], ["fail", "Fail", "f"]].forEach(([state, word, cls]) => {
+          const b = el("button", "stepbtn " + cls, word); b.type = "button"; b.setAttribute("aria-pressed", String(st === state));
+          b.addEventListener("click", () => markStep(s.n, state));
+          btns.append(b); if (state === "pass") focusMe = b;
+        });
+        body.append(btns);
+      } else {
+        row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", "Step " + s.n + (st ? " (" + st + ")" : "") + ": " + s.text);
+        const go = () => pickStep(s.n);
+        row.addEventListener("click", go);
+        row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      }
+      row.append(mark, body); box.append(row);
+    });
+    if (steps.length) s0.append(box);
+    v.saveEl = el("div", "hint", v.saveMsg || ""); v.saveEl.setAttribute("role", "status"); s0.append(v.saveEl);
+    if (T.traps || T.brokenIf) {
+      const notes = el("div", "notes");
+      if (T.traps) { const n = el("div", "note trap"); n.append(el("b", "", "Traps"), document.createTextNode(T.traps)); notes.append(n); }
+      if (T.brokenIf) { const n = el("div", "note broken"); n.append(el("b", "", "Broken if"), document.createTextNode(T.brokenIf)); notes.append(n); }
+      todo.append(notes);
+    }
+    if (shotsOf(v.f).some(p => p.url)) checksBlock(todo, v.f, true);
+    if (focusBtn && focusMe) focusMe.focus();
+  };
+  v.drawEv(); v.drawTodo();
+}
+function showStepShot(n) {
+  const i = shotsOf(V.f).filter(p => p.url).findIndex(p => String(p.step) === String(n));
+  if (i >= 0 && i !== V.shot) { V.shot = i; V.drawEv(); }
+}
+function pickStep(n) { if (!V) return; V.cur = n; showStepShot(n); V.drawTodo(true); }
+function markStep(n, state) {
+  const v = V; if (!v) return;
+  if (v.rev[n] === state) delete v.rev[n];
+  else {
+    v.rev[n] = state;
+    const steps = testData(v.c, v.f).steps, i = steps.findIndex(s => s.n === n);
+    const nxt = steps.slice(i + 1).find(s => !v.rev[s.n]) || steps.find(s => !v.rev[s.n]);
+    if (nxt) { v.cur = nxt.n; showStepShot(nxt.n); }
+  }
+  v.drawTodo(true); saveReview();
+}
+function drawNeeds(p) {
+  const { c, f } = V, next = f.next || c.next;
+  if (c.stuck) prose(sec(p, "Why it is stuck"), c.stuck);
+  if (next) { const d = el("div", "callout"); prose(d, next); sec(p, "What it needs").append(d); }
+  if (!c.stuck && !next) prose(p, "Nothing is written about what this card needs. The History tab has its log.");
+  p.append(el("div", "hint", "Type your answer in the box below and press Send answer."));
+}
+function drawHistory(p) {
+  const { c, f } = V, log = f.log || c.log || [];
+  runsBlock(p, f);
+  if (log.length) {
+    const s = sec(p, "Log", log.length + (log.length === 1 ? " entry" : " entries")), ul = el("ul", "loglist");
+    log.forEach(l => { const m = String(l).match(/^(\d{4}-\d\d-\d\d(?:[ T]\d\d:\d\d)?)\s+([\s\S]*)$/), li = el("li"); if (m) li.append(el("time", "", m[1]), document.createTextNode(m[2])); else li.textContent = l; ul.append(li); });
+    s.append(ul);
+  }
+  if (!p.children.length) prose(p, V.loaded ? "No history yet." : "Loading…");
+}
+const PANES = { test: drawTest, needs: drawNeeds, plan: drawPlan, history: drawHistory, details: p => factsBlock(p, V.c, V.f) };
+function drawPane() {
+  const v = V, p = v.pane; v.drawEv = v.drawTodo = null; v.saveEl = null;
+  p.className = "pane"; p.replaceChildren(); p.scrollTop = 0;
+  p.setAttribute("aria-labelledby", "tab-" + v.tab);
+  v.tabs.querySelectorAll(".tab").forEach(t => { const on = t.dataset.tab === v.tab; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
+  PANES[v.tab](p);
+  drawQuestion();
+}
+function drawFacts() {
+  const { c, f } = V, box = V.facts; box.replaceChildren();
+  drawAgents();
+  box.append(el("span", "chip col", c.column || "?"));
+  (c.labels || []).forEach(l => { const t = el("span", "chip tag", l); let h = 0; for (const ch of String(l)) h = (h * 31 + ch.charCodeAt(0)) % 360; t.style.setProperty("--h", h); box.append(t); });
+  const state = (f.testRun && f.testRun.state) || (c.agents && c.agents.tester);
+  if (state) {
+    const list = checkList(f), tried = list.some(r => r.state);
+    box.append(el("span", "pill " + (state === "passed" ? "ok" : "bad"), "Tester " + (AGENT_WORD[state] || state) + (tried ? " " + list.filter(r => r.state === "met").length + " of " + list.length : "")));
+  }
+  if (WAITING.includes(c.column) && c.since) {
+    const days = Math.floor((Date.now() - Date.parse(c.since)) / 864e5);
+    if (days >= 0) box.append(el("span", "wait" + (days >= 3 ? " late" : ""), days === 0 ? "Waiting since today" : "Waiting " + days + (days === 1 ? " day" : " days")));
+  }
+  const links = el("div", "links"), link = (text, href) => { const a = el("a", "linkbtn", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; links.append(a); };
+  const is = issueOf(c.issue || f.issue); if (is && /^https:\/\//.test(is.url || "")) link(is.n ? "Issue #" + is.n : "Issue", is.url);
+  const stack = testData(c, f).stack; if (stack) link("Open test stack", stack);
+  const pr = prOf(c); if (pr && pr.url) link(pr.n ? "PR #" + pr.n : "PR", pr.url);
+  if (c.session) { const go = el("button", "linkbtn", "Open session"); go.type = "button"; go.addEventListener("click", () => ask(c, "open this card's session beside you.", V.said)); links.append(go); }
+  if (c.column !== "Done") {
+    // Archive asks first, then sends the Router one message. The page never moves the card itself.
+    const v = V, wrap = el("span", "arch"), num = "#" + (c.n ?? c.id);
+    const idle = () => {
+      const b = el("button", "linkbtn", v.archived ? "Archive asked" : "Archive"); b.type = "button"; b.disabled = !!v.archived;
+      b.addEventListener("click", sure); wrap.replaceChildren(b); return b;
+    };
+    const sure = () => {
+      const yes = el("button", "linkbtn danger", "Archive"), no = el("button", "linkbtn", "Cancel"); yes.type = no.type = "button";
+      wrap.replaceChildren(el("span", "archq", "Archive " + num + "?"), yes, no);
+      no.addEventListener("click", () => idle().focus());
+      yes.addEventListener("click", async () => {
+        yes.disabled = no.disabled = true;
+        await ask(c, "archive.", v.said);
+        if (v.said.textContent.startsWith("Sent")) { v.archived = true; v.said.textContent = "Sent to the Router: “Card " + num + ": archive.” The Router moves it to Done."; }
+        idle();
+      });
+      no.focus();
+    };
+    idle(); links.append(wrap);
+  }
+  if (links.children.length) box.append(links);
+}
+// ---- Plan tab (the picture-first layout) and the pieces it shares ----
+const arr = v => Array.isArray(v) ? v : [];
+const PART_TONES = ["run", "plan", "ship", "test", "stuck", "done"];
+const STAGES = ["Plan", "Critic", "Build", "Test", "Ship"];
+// Text with light marking: {stressed}, ~struck~ and `code`. Everything is added as text nodes, never as HTML.
+function marked(parent, text) {
+  String(text == null ? "" : text).split(/(\{[^{}]+\}|~[^~]+~|`[^`]+`)/).forEach(t => {
+    if (!t) return;
+    if (t.length > 2 && t[0] === "{" && t.endsWith("}")) parent.append(el("em", "", t.slice(1, -1)));
+    else if (t.length > 2 && t[0] === "~" && t.endsWith("~")) parent.append(el("s", "", t.slice(1, -1)));
+    else if (t.length > 2 && t[0] === "`" && t.endsWith("`")) parent.append(el("code", "", t.slice(1, -1)));
+    else parent.append(document.createTextNode(t));
+  });
+  return parent;
+}
+function partChip(n, parts) {
+  const i = parts.findIndex(p => String(p.n) === String(n)), s = el("span", "partno", "#" + n);
+  s.style.setProperty("--p", "var(--" + PART_TONES[(i < 0 ? 5 : i) % PART_TONES.length] + ")"); return s;
+}
+function firstSentence(text) {
+  const line = String(text || "").split("\n").find(l => l.trim()) || "", m = line.match(/^(.{20,220}?[.!?])(\s|$)/);
+  return m ? m[1] : line.length > 200 ? line.slice(0, 200) + "…" : line;
+}
+// The subagents strip: above the tabs, so it shows on every tab. Filled from the card's `agents`, with optional notes from the detail row.
+function drawAgents() {
+  const { c, f } = V, box = V.agentsEl, ran = c.agents && typeof c.agents === "object" ? c.agents : {}, notes = f.agentNotes && typeof f.agentNotes === "object" ? f.agentNotes : {};
+  const order = ["router", "planner", "critic", "reproducer", "reviewer", "tester"], names = [...new Set([...Object.keys(ran), ...Object.keys(notes)])];
+  names.sort((a, b) => (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b)));
+  box.replaceChildren(); box.hidden = !names.length;
+  if (box.hidden) return;
+  box.append(el("div", "lead", "Subagents"));
+  names.forEach(name => {
+    const r = ran[name], good = ["passed", "fixed", "reproduced"].includes(r);
+    const a = el("div", "agent" + (r ? good ? " ok" : " warn" : ""));
+    const word = r ? AGENT_WORD[r] || String(r) : "Not run yet";
+    a.append(el("span", "dot", r ? good ? "✓" : "!" : "–"), el("b", "", name[0].toUpperCase() + name.slice(1)), el("span", "r", notes[name] ? String(notes[name]) : word[0].toUpperCase() + word.slice(1)));
+    a.title = name + ": " + (notes[name] || word);
+    box.append(a);
+  });
+}
+// One question's controls: a button per option, a free-text answer and what was sent. Used above the tabs and in the Plan tab.
+const qStamp = q => String(q.askedAt || "") + "|" + q.text;
+function questionControls(v, q, i) {
+  const k = qList(v.c).length, stamp = qStamp(q), ans = answerFor(v.c, q, i);
+  const ansSig = ans ? String(ans.at || "") + "|" + ans.key : "", reopened = ans && v.qOpen[stamp] === ansSig;
+  const locked = !!ans && !reopened;
+  const said = el("div", "said", v.qSent[stamp] || ""); said.setAttribute("role", "status");
+  const opts = el("div", "qopts"), row = el("div", "qrow"), text = el("input"), send = el("button", "", "Send answer");
+  text.type = "text"; text.id = "answer-" + v.c.id + "-" + (i + 1); text.autocomplete = "off"; text.setAttribute("aria-label", "Your answer" + (k > 1 ? " to question " + (i + 1) : ""));
+  text.placeholder = "Your own answer, or a note to go with an option. Ctrl+Enter sends.";
+  send.type = "button";
+  const all = [send, text];
+  const go = async what => {
+    const typed = text.value.trim();
+    if (!what && !typed) { said.textContent = "Pick an option or type an answer first."; text.focus(); return; }
+    const lead = k > 1 ? "answer to question " + (i + 1) + " of " + k + " (" + (q.kind || q.text.split(/\s+/).slice(0, 6).join(" ")) + "): " : "answer to the question: ";
+    const msg = lead + [what, typed].filter(Boolean).join(" ");
+    all.forEach(x => x.disabled = true);
+    await ask(v.c, msg, said);
+    if (said.textContent.startsWith("Sent")) v.qSent[stamp] = said.textContent = "Sent to the Router: “Card #" + (v.c.n ?? v.c.id) + ": " + msg + "” It stays here until the Router has acted.";
+    else all.forEach(x => x.disabled = false);
+  };
+  arr(q.options).forEach(o => {
+    if (!o || (!o.key && !o.label)) return;
+    const rec = q.recommended != null && String(o.key) === String(q.recommended);
+    const chosen = ans && (String(o.key) === String(ans.key) || (ans.label && String(o.label) === String(ans.label)));
+    const b = el("button", "qopt" + (rec ? " rec" : "") + (chosen ? " chosen" : "")); b.type = "button";
+    if (ans) b.setAttribute("aria-pressed", String(!!chosen));
+    const same = o.key != null && o.label && String(o.key).toLowerCase() === String(o.label).toLowerCase();
+    b.append(el("b", "", same ? String(o.label) : [o.key, o.label].filter(Boolean).join(": "))); if (o.detail) b.append(el("span", "", o.detail));
+    if (chosen) b.append(el("span", "pick", "✓ Your answer"));
+    else if (rec) b.append(el("span", "recm", "Recommended"));
+    b.addEventListener("click", () => go(o.key && o.label ? o.key + " (" + o.label + ")" : String(o.key || o.label)));
+    opts.append(b); all.push(b);
+  });
+  send.addEventListener("click", () => go(""));
+  text.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go(""); } });
+  row.append(text, send);
+  // Answered: options stay visible with his choice marked, but are locked until he presses "Change".
+  const ansEl = el("div", "qans"); ansEl.hidden = !ans;
+  if (ans) {
+    const opt = arr(q.options).find(o => o && String(o.key) === String(ans.key));
+    ansEl.append(el("span", "chip a", "✓ Answered"), el("span", "", (ans.label || (opt && opt.label) || ans.key) + (ans.at ? " · " + when(ans.at) : "")));
+    const ch = el("button", "linkbtn", "Change"); ch.type = "button"; ch.hidden = !locked;
+    ch.addEventListener("click", () => {
+      v.qOpen[stamp] = ansSig; delete v.qSent[stamp]; said.textContent = "";
+      all.forEach(x => x.disabled = false); row.hidden = false; ch.hidden = true;
+      const first = opts.querySelector("button"); (first || text).focus();
+    });
+    ansEl.append(ch);
+  }
+  if (locked) { all.forEach(x => x.disabled = true); row.hidden = true; }
+  else if (v.qSent[stamp]) all.forEach(x => x.disabled = true);
+  return { opts, row, said, ansEl, answered: !!ans };
+}
+// Questions for the owner, above the tabs on every tab but Plan (the Plan tab shows them as its Decisions block).
+// The page only sends his answer; the Router clears the field.
+function drawQuestion() {
+  const v = V, box = v.qbox, qs = qList(v.c), open = openQs(v.c).length;
+  const tab = v.tabs.querySelector('[data-tab="plan"]');
+  if (tab) { const old = tab.querySelector(".badge"); if (old) old.remove(); if (open) { const b = el("span", "badge", String(open)); b.setAttribute("aria-label", open + (open === 1 ? " decision for you" : " decisions for you")); tab.append(b); } }
+  box.replaceChildren(); box.hidden = !qs.length || v.tab === "plan";
+  if (box.hidden) return;
+  const head = el("div", "qhead");
+  head.append(open ? el("span", "chip q", open > 1 ? open + " questions for you" : qs.length > 1 ? "1 question for you" : "Question for you") : el("span", "chip a", qs.length > 1 ? "All answered" : "Answered"));
+  if (qs.length > 1 && open < qs.length) head.append(el("span", "hint", (qs.length - open) + " of " + qs.length + " answered"));
+  if (qs.length > 1) {
+    const go = el("button", "linkbtn", open ? "Answer them on the Plan tab" : "See them on the Plan tab"); go.type = "button";
+    go.addEventListener("click", () => { v.tab = "plan"; drawPane(); });
+    head.append(go); box.append(head);
+    qs.forEach((q, i) => { const a = answerFor(v.c, q, i), line = marked(el("p", "qline" + (a ? " done" : "")), (a ? "✓ " : (i + 1) + ". ") + q.text); if (a) line.append(el("span", "hint", " · " + (a.label || a.key))); box.append(line); });
+    return;
+  }
+  const q = qs[0], ctl = questionControls(v, q, 0);
+  if (q.askedAt) head.append(el("span", "hint", "asked " + when(q.askedAt)));
+  box.append(head, el("p", "qtext", q.text));
+  if (ctl.answered) box.append(ctl.ansEl);
+  if (ctl.opts.children.length) box.append(ctl.opts);
+  box.append(ctl.row, ctl.said);
+}
+function drawPlan(p) {
+  p.classList.add("plan");
+  const v = V, { c, f } = v, P = f.plan && typeof f.plan === "object" ? f.plan : {};
+  const parts = arr(P.parts).filter(x => x && x.n != null), ships = arr(P.ships).filter(Boolean), qs = qList(c), list = checkList(f);
+  const sum = f.summary || c.status || "", next = f.next || c.next, met = list.filter(r => r.state === "met").length;
+  const richPlan = !!(P.goal || P.picture || parts.length || ships.length || arr(P.risks).length || arr(P.folds).length);
+
+  // 1. The goal in one line, with counters
+  // Headline: the plan's own goal, else the done-when sentence when it says something of its own, else the summary's first sentence.
+  const dw = String(f.doneWhen || "").trim(), dwGoal = !P.goal && dw && dw.length <= 260 && !/^(every|all) (the )?checks?/i.test(dw);
+  const goalText = P.goal || (dwGoal ? dw[0].toUpperCase() + dw.slice(1) : firstSentence(sum));
+  if (goalText) {
+    const g = el("div", "goal"), stats = el("div", "stats");
+    g.append(marked(el("p"), goalText));
+    const stat = (n, word, you) => { const s = el("div", "stat" + (you ? " you" : "")); s.append(el("b", "", String(n)), el("span", "", word)); stats.append(s); };
+    if (parts.length) stat(parts.length, parts.length === 1 ? "part" : "parts");
+    if (ships.length) stat(ships.length, ships.length === 1 ? "ship" : "ships");
+    if (list.length) stat(met + "/" + list.length, "checks met");
+    const openN = openQs(c).length;
+    if (openN) stat(openN, openN === 1 ? "decision for you" : "decisions for you", true);
+    if (stats.children.length) g.append(stats);
+    p.append(g);
+  }
+  if (next && !isHow(next)) { const d = el("div", "callout"); prose(d, next); sec(p, "Next step").append(d); }
+
+  // 2. Today and after, only when the detail row carries the picture
+  const lanes = P.picture ? arr(P.picture.lanes).filter(L => L && arr(L.steps).length) : [];
+  if (lanes.length) {
+    const flow = el("div", "flow");
+    lanes.forEach(L => {
+      const steps = arr(L.steps), good = L.tone === "good", lane = el("div", "lane " + (good ? "after" : "today")), when = el("div", "when");
+      lane.style.setProperty("--lane", "92px " + steps.map(() => "minmax(0, 1fr)").join(" minmax(96px, .5fr) "));
+      when.append(el("b", "", L.when || (good ? "After" : "Today"))); if (L.note) when.append(el("span", "", (good ? "✓ " : "✕ ") + L.note));
+      lane.append(when);
+      steps.forEach((st, i) => {
+        const n = el("div", "node" + (st.hot ? " hot" : "")), who = el("span", "who", st.who || "");
+        if (st.part != null) who.append(partChip(st.part, parts));
+        n.append(who, marked(el("b"), st.title || ""));
+        if (st.text) n.append(marked(el("span", "s"), st.text));
+        arr(st.gates).forEach(gt => { if (!gt) return; const lock = gt.tone === "lock", g = el("span", "gate " + (lock ? "lock" : "no")); if (gt.part != null) g.append(partChip(gt.part, parts)); g.append(marked(el("span"), (lock ? "" : "✕ ") + (gt.text || ""))); n.append(g); });
+        lane.append(n);
+        if (i < steps.length - 1) { const a = el("div", "arrow"); a.append(el("span", "", arr(L.arrows)[i] || ""), el("i")); lane.append(a); }
+      });
+      flow.append(lane);
+    });
+    sec(p, P.picture.title || "Today and after").append(flow);
+  }
+
+  // 3. Decisions: the card's question or questions, a button per option
+  if (qs.length) {
+    const openN = openQs(c).length, s = sec(p, qs.length === 1 ? "1 decision" : qs.length + " decisions", openN < qs.length ? (qs.length - openN) + " of " + qs.length + " answered" : ""), grid = el("div", "decs");
+    s.classList.add("needs"); if (!openN) s.classList.add("settled");
+    s.querySelector("h3").prepend(openN ? el("span", "q", "Needs you") : el("span", "q a", "All answered"));
+    qs.forEach((q, i) => {
+      const ctl = questionControls(v, q, i), d = el("div", "decn" + (ctl.answered ? " answered" : "")), top = el("div", "dtop");
+      top.append(el("span", "dnum", ctl.answered ? "✓" : String(i + 1))); if (q.kind) top.append(el("span", "kind", q.kind));
+      if (q.askedAt) top.append(el("span", "hint", "asked " + when(q.askedAt)));
+      d.append(top, marked(el("h4"), q.text));
+      if (arr(q.points).length) { const ul = el("ul"); q.points.forEach(pt => { if (!pt) return; ul.append(marked(el("li", pt.no ? "x" : ""), typeof pt === "string" ? pt : pt.text || "")); }); d.append(ul); }
+      if (ctl.answered) d.append(ctl.ansEl);
+      if (ctl.opts.children.length) d.append(ctl.opts);
+      d.append(ctl.row, ctl.said); grid.append(d);
+    });
+    s.append(grid);
+  }
+
+  // 4. Ship order, with each part's progress
+  if (ships.length || parts.length) {
+    const order = el("div", "order"), used = new Set();
+    const stop = (cls, label, title, text) => { const d = el("div", "stop " + cls); if (label) d.append(el("span", "t", label)); if (title) d.append(marked(el("span", "h"), title)); if (text) d.append(marked(el("span", "d"), text)); order.append(d); return d; };
+    const partCard = pt => {
+      const d = el("div", "part"), hd = el("div", "hd"), i = parts.indexOf(pt);
+      d.style.setProperty("--p", "var(--" + PART_TONES[(i < 0 ? 5 : i) % PART_TONES.length] + ")");
+      hd.append(partChip(pt.n, parts)); if (pt.title) hd.append(el("b", "", pt.title)); if (pt.size) hd.append(el("span", "sz", String(pt.size)));
+      d.append(hd); if (pt.text) d.append(marked(el("p"), pt.text)); if (pt.waits) d.append(el("span", "w", pt.waits));
+      if (pt.stage != null) {
+        const at = STAGES.findIndex(x => x.toLowerCase() === String(pt.stage).toLowerCase()), prog = el("div", "prog");
+        STAGES.forEach((name, j) => prog.append(el("span", j <= at ? "on" : j === at + 1 ? "next" : "", name)));
+        prog.setAttribute("role", "img"); prog.setAttribute("aria-label", at < 0 ? "Not started" : STAGES[at] + " done" + (at < STAGES.length - 1 ? ", " + STAGES[at + 1] + " next" : ""));
+        d.append(prog);
+      }
+      return d;
+    };
+    if (P.start && (P.start.title || P.start.text)) stop("now", P.start.label || "Now", P.start.title, P.start.text);
+    ships.forEach((sh, i) => {
+      const d = stop("ship", sh.label || "Ship " + (i + 1), sh.title, sh.text), box = el("div", "parts");
+      d.style.setProperty("--k", "var(--" + PART_TONES[i % PART_TONES.length] + ")");
+      arr(sh.parts).forEach(n => { used.add(String(n)); box.append(partCard(parts.find(x => String(x.n) === String(n)) || { n })); });
+      if (box.children.length) d.append(box);
+    });
+    const rest = parts.filter(pt => !used.has(String(pt.n)));
+    if (rest.length) { const d = stop("ship", ships.length ? "Not in a ship yet" : "Parts", "", ""), box = el("div", "parts"); rest.forEach(pt => box.append(partCard(pt))); d.append(box); }
+    if (P.end && (P.end.title || P.end.text)) stop("end", P.end.label || "Done", P.end.title, P.end.text);
+    sec(p, "Ship order").append(order);
+  }
+
+  // 5. Risk and undo
+  const risks = arr(P.risks).filter(r => r && (r.risk || r.cover)), undo = arr(P.undo).filter(u => u && u.text);
+  if (risks.length || undo.length || P.undoNote) {
+    const two = el("div", "two" + (risks.length && (undo.length || P.undoNote) ? "" : " one"));
+    if (risks.length) {
+      const b = el("div", "box risk"); b.append(el("h4", "", "What could go wrong → what covers it"));
+      risks.forEach(r => { const row = el("div", "row"); row.append(marked(el("b"), r.risk || ""), el("i", "", "→"), marked(el("span", "fix"), r.cover || "")); b.append(row); });
+      two.append(b);
+    }
+    if (undo.length || P.undoNote) {
+      const b = el("div", "box undo"); b.append(el("h4", "", "Undo"));
+      undo.forEach(u => { const row = el("div", "row"), who = el("span", "who"); arr(u.parts).forEach(n => who.append(partChip(n, parts))); row.append(who, marked(el("span"), u.text)); b.append(row); });
+      if (P.undoNote) b.append(marked(el("div", "foot"), P.undoNote));
+      two.append(b);
+    }
+    sec(p, "Risk and undo").append(two);
+  }
+
+  // 6. Done when: the sentence, then the checks with a meter
+  if ((f.doneWhen && !dwGoal) || list.length) {
+    const s = sec(p, "Done when", list.length ? met + " of " + list.length : "");
+    if (list.length) { const m = el("span", "meter"), fill = el("i"); fill.style.width = Math.round(100 * met / list.length) + "%"; m.append(fill); m.setAttribute("role", "img"); m.setAttribute("aria-label", met + " of " + list.length + " checks met"); s.querySelector("h3").append(m); }
+    if (f.doneWhen && !dwGoal) prose(s, f.doneWhen);
+    if (list.length) {
+      const ul = el("ul", "done");
+      list.forEach(r => { const li = el("li", r.state === "met" ? "met" : r.state ? "unmet" : ""), t = marked(el("span"), r.text); if (r.by) t.append(el("small", "", "checked by " + r.by)); li.append(t); ul.append(li); });
+      s.append(ul);
+    }
+  }
+
+  // 7. Not in this card
+  const outs = arr(P.outOfScope).filter(o => o && (o.name || typeof o === "string"));
+  if (outs.length) {
+    const box = el("div", "outs");
+    outs.forEach(o => { const s = el("span", "out"); s.append(el("b", "", typeof o === "string" ? o : o.name)); if (o.note) s.append(document.createTextNode(" · " + o.note)); box.append(s); });
+    sec(p, "Not in this card").append(box);
+  }
+
+  // 8. Everything else, folded
+  const folds = el("div", "folds");
+  const fold = (title, note, fill, open) => { const d = el("details"), s = el("summary", "", title), inn = el("div", "in"); if (note) s.append(el("small", "", note)); fill(inn); d.append(s, inn); d.open = !!open; folds.append(d); };
+  arr(P.folds).forEach(F => {
+    if (!F || !F.title) return;
+    fold(F.title, F.note, inn => {
+      if (arr(F.items).length) { const ol = el("ol"); F.items.forEach(t => ol.append(marked(el("li"), t))); inn.append(ol); }
+      if (arr(F.pairs).length) { const dl = el("dl", "kv"); F.pairs.forEach(pr => { if (arr(pr).length) dl.append(el("dt", "", String(pr[0])), marked(el("dd"), pr[1])); }); inn.append(dl); }
+      if (F.text) inn.append(el("p", "prose", String(F.text)));
+    });
+  });
+  if (sum) fold(richPlan ? "Full plan text" : "What this card is", richPlan ? "as written on the card" : "", inn => inn.append(el("p", "prose", sum)), !richPlan);
+  if (folds.children.length) sec(p, richPlan ? "Detail" : "The card's own words").append(folds);
+
+  if (!p.children.length) prose(p, v.loaded ? "Nothing is written for this card yet." : "Loading…");
+}
+const DECIDE = {
+  "Human test": [["Send back", "send back.", "why"], ["Ship it", "ship it."]],
+  "Plan review": [["Send back", "send the plan back.", "why"], ["Approve plan", "approve the plan."]],
+  "Blocked": [["Send answer", "answer.", "note"]]
+};
+function decisionBar(c) {
+  const bar = el("div", "dec"), said = el("div", "said"), note = el("input"), acts = DECIDE[c.column] || [["Send to Router", "", "note"]];
+  said.setAttribute("role", "status"); V.said = said;
+  const main = acts[acts.length - 1];
+  note.type = "text"; note.id = "note-" + c.id; note.autocomplete = "off"; note.setAttribute("aria-label", "Note for the Router");
+  note.placeholder = (main[2] === "note" ? "Write to the Router about this card." : "Note for the Router (optional).") + " Ctrl+Enter: " + main[0] + ".";
+  const btns = acts.map(([word, verb, need], i) => {
+    const b = el("button", i === acts.length - 1 ? "go" : "", word); b.type = "button";
+    b.addEventListener("click", async () => {
+      const v = V, text = note.value.trim(), ks = Object.keys(v.rev).sort((a, b) => a - b);
+      if (need === "note" && !text) { said.textContent = "Write a note first."; note.focus(); return; }
+      if (need === "why" && !text && !ks.some(k => v.rev[k] === "fail")) { said.textContent = "Say what to change, or mark a step as failed."; note.focus(); return; }
+      const parts = []; if (verb) parts.push(verb);
+      if (ks.length) parts.push("Steps: " + ks.map(k => k + " " + v.rev[k]).join(", ") + ".");
+      if (text) parts.push(verb ? "Note: " + text : text);
+      const msg = parts.join(" ");
+      btns.forEach(x => x.disabled = true); note.disabled = true;
+      await ask(c, msg, said);
+      if (said.textContent.startsWith("Sent")) { v.sent = true; said.textContent = "Sent to the Router: “Card #" + (c.n ?? c.id) + ": " + msg + "” The Router does the rest."; }
+      else { btns.forEach(x => x.disabled = false); note.disabled = false; }
+    });
+    return b;
+  });
+  note.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); btns[btns.length - 1].click(); } });
+  bar.append(said, note, ...btns); return bar;
+}
+// A new snapshot of the open card's row. The view is updated in place once he has left it alone for 10 seconds,
+// keeping the tab, the scroll position, open folds, and any text he has typed with its cursor.
+function liveRow(c) {
+  const v = V; if (!v) return;
+  const sig = JSON.stringify(c);
+  if (v.rowSig == null) v.rowSig = JSON.stringify(v.c);
+  if (sig === v.rowSig) return;
+  v.rowSig = sig; v.nextRow = c; v.stale = true; refreshWhenIdle();
+}
+function busy(v) {
+  if ($("zoom") || document.querySelector("#sheet .arch .archq") || document.querySelector("#archive-all.busy")) return true;
+  return Date.now() - (v.touched || 0) < 10000;
+}
+function refreshWhenIdle() {
+  const v = V; if (!v || !v.stale) return;
+  clearTimeout(v.idleTimer);
+  if (busy(v)) { v.idleTimer = setTimeout(refreshWhenIdle, Math.max(1000, 10000 - (Date.now() - (v.touched || 0)))); return; }
+  v.stale = false;
+  const old = v.c, c = v.nextRow; v.c = c;
+  keepState(v, () => {
+    drawFacts();
+    if (v.tab === "test") { if (JSON.stringify([old.how, old.next]) !== JSON.stringify([c.how, c.next]) && v.drawTodo) v.drawTodo(); drawQuestion(); }
+    else drawPane();
+  });
+}
+// Runs a redraw of the open card, then puts back what the redraw would lose.
+function keepState(v, redraw) {
+  const sheet = $("sheet"); if (!sheet || V !== v) return redraw();
+  const boxes = [sheet, v.pane, v.qbox, ...sheet.querySelectorAll(".ev, .todo")].map(e => [e, e.scrollTop, e.scrollLeft]);
+  const typed = [...sheet.querySelectorAll("input[id], textarea[id]")].filter(e => e.value).map(e => [e.id, e.value]);
+  const act = document.activeElement, actId = act && sheet.contains(act) ? act.id : "";
+  let sel = null; try { if (actId && act.selectionStart != null) sel = [act.selectionStart, act.selectionEnd]; } catch (e) {}
+  const folds = [...v.pane.querySelectorAll("details[open] > summary")].map(x => x.textContent);
+  redraw();
+  typed.forEach(([id, val]) => { const e = document.getElementById(id); if (e && !e.value) e.value = val; });
+  if (folds.length) v.pane.querySelectorAll("details > summary").forEach(x => { if (folds.includes(x.textContent)) x.parentElement.open = true; });
+  boxes.forEach(([e, t, l]) => { if (e.isConnected) { e.scrollTop = t; e.scrollLeft = l; } });
+  if (actId) { const e = document.getElementById(actId); if (e && e !== document.activeElement && !e.disabled) { e.focus({ preventScroll: true }); try { if (sel) e.setSelectionRange(sel[0], sel[1]); } catch (x) {} } }
+}
+function closeCard() {
+  if ($("zoom")) { closeZoom(); return; }
+  const v = $("veil"); if (v) v.remove(); V = null;
+  const was = shown, id = was && was.dataset ? was.dataset.id : null; shown = null;
+  holdFocus(() => $("veil") ? null : was && was.isConnected ? was : id ? document.querySelector('.card[data-id="' + CSS.escape(id) + '"]') : null);
+}
+function openCard(c) {
+  const v0 = $("veil"); if (v0) v0.remove(); const z0 = $("zoom"); if (z0) z0.remove();
+  shown = document.activeElement;
+  const tone = (COLS.find(x => x[0] === c.column) || [0, "run"])[1];
+  const veil = el("div"); veil.id = "veil";
+  const sheet = el("div"); sheet.id = "sheet"; sheet.style.setProperty("--c", "var(--" + tone + ")");
+  sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", "Card " + (c.n ?? c.id));
+  const head = el("header"), bar = el("div", "bar"), close = el("button", "", "Close"); close.id = "close"; close.type = "button";
+  const h = el("h2"); h.append(el("span", "n", "#" + (c.n ?? c.id)), document.createTextNode(c.title || "(no title)"));
+  const facts = el("div", "facts"), tabs = el("div", "tabs"), pane = el("div", "pane");
+  tabs.setAttribute("role", "tablist"); pane.setAttribute("role", "tabpanel");
+  const names = [["test", "Test"], ["plan", "Plan"], ["history", "History"], ["details", "Details"]];
+  if (c.column === "Blocked") names.unshift(["needs", "What it needs"]);
+  const first = ["Human test", "Deploy complete"].includes(c.column) ? "test" : c.column === "Blocked" ? "needs" : "plan";
+  const v = V = { c, f: {}, loaded: !DB, rev: {}, cur: null, shot: 0, tab: first, facts, tabs, pane, qbox: el("div", "qbox"), agentsEl: el("div", "agents"), qSent: {}, qOpen: {}, touched: 0, saveMsg: "" };
+  names.forEach(([id, word]) => {
+    const t = el("button", "tab", word); t.type = "button"; t.id = "tab-" + id; t.dataset.tab = id; t.setAttribute("role", "tab");
+    t.addEventListener("click", () => { v.tab = id; drawPane(); });
+    tabs.append(t);
+  });
+  tabs.addEventListener("keydown", e => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const all = [...tabs.children], i = all.indexOf(document.activeElement); if (i < 0) return;
+    e.preventDefault(); e.stopPropagation(); const t = all[(i + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length]; t.click(); t.focus();
+  });
+  v.agentsEl.setAttribute("aria-label", "Subagents run on this card");
+  bar.append(h, close); head.append(bar, facts, v.agentsEl, tabs);
+  sheet.append(head, v.qbox, pane, decisionBar(c)); veil.append(sheet); document.body.append(veil);
+  // Any sign of use holds back live redraws for 10 seconds (see liveRow).
+  const touch = () => { v.touched = Date.now(); };
+  ["pointerdown", "keydown", "input", "wheel", "focusin", "touchstart"].forEach(t => sheet.addEventListener(t, touch, true));
+  sheet.addEventListener("scroll", touch, true);
+  drawFacts(); drawQuestion(); drawPane(); close.focus();
+  close.addEventListener("click", () => { const z = $("zoom"); if (z) z.remove(); closeCard(); });
+  veil.addEventListener("click", e => { if (e.target === veil) close.click(); });
+  if (!DB) return;
+  DB.doc("cards/" + c.id + "/detail/full").get().then(snap => {
+    if (V !== v) return;
+    v.loaded = true; if (snap.exists) v.f = snap.data() || {};
+    keepState(v, () => { drawFacts(); drawPane(); });
+  }).catch(() => { if (V === v) { v.loaded = true; keepState(v, drawPane); } });
+  DB.doc("cards/" + c.id + "/review/owner").get().then(snap => {
+    if (V !== v || !snap.exists) return;
+    const saved = (snap.data() || {}).steps || {};
+    Object.keys(saved).forEach(k => { if (!(k in v.rev) && (saved[k] === "pass" || saved[k] === "fail")) v.rev[k] = saved[k]; });
+    v.cur = null; if (v.drawTodo) v.drawTodo();
+  }).catch(() => {});
+}
+document.addEventListener("keydown", e => {
+  const z = $("zoom");
+  if (z && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const s = z._shots, i = +z.dataset.i; zoom(s, (i + (e.key === "ArrowRight" ? 1 : s.length - 1)) % s.length); return; }
+  if (e.key === "Escape" && (z || $("veil"))) { e.preventDefault(); e.stopPropagation(); closeCard(); return; }
+  const root = z || $("sheet");
+  if (e.key === "Tab" && root) {
+    const f = [...root.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), [tabindex="0"]')].filter(x => x.getClientRects().length);
+    if (!f.length) return;
+    const at = document.activeElement, first = f[0], last = f[f.length - 1];
+    if (!root.contains(at)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+  }
+});
+const boxes = {};
+COLS.forEach(([name, tone, sub]) => {
+  const sec = el("section", sub && tone !== "ship" && tone !== "done" ? "you" : ""); sec.style.setProperty("--c", "var(--" + tone + ")");
+  const h = el("h2", "", name + " "); const n = el("span", "count", "0"); h.append(n); sec.append(h);
+  if (sub) sec.append(el("div", "sub", sub));
+  const msg = el("div", "colmsg"); msg.hidden = true; msg.setAttribute("role", "status"); sec.append(msg);
+  const box = el("div", "cards"); sec.append(box); $("board").append(sec); boxes[name] = { box, n, sec, msg };
+});
+
+// Drag a card onto another column: the page shows it there at once and sends the Router one message.
+// PENDING holds each asked-for move ({from, to, timer}) until the Router changes the row, or three minutes pass.
+const PENDING = {}; let DRAG = null, dragEnd = 0, LAST = [];
+const colOf = c => boxes[c.column] ? c.column : "Backlog";
+function colSay(col, text) { const m = boxes[col].msg; m.textContent = text; m.hidden = !text; }
+function unmove(id, why) { const p = PENDING[id]; if (!p) return; clearTimeout(p.timer); delete PENDING[id]; if (why) colSay(p.to, why); repaint(); }
+async function askMove(c, to, text) {
+  const from = colOf(c);
+  if (PENDING[c.id] || from === to) return;
+  const num = "#" + (c.n ?? c.id), m = el("span");
+  PENDING[c.id] = { from, to, timer: 0 }; colSay(to, ""); repaint();
+  await ask(c, text, m);
+  if (!PENDING[c.id]) return;
+  if (m.textContent.startsWith("Sent")) PENDING[c.id].timer = setTimeout(() => unmove(c.id, num + ": No answer from the Router yet. It is back in " + from + "."), 180000);
+  else unmove(c.id, num + " is back in " + from + ". " + m.textContent);
+}
+const shipAsk = (c, how) => askMove(c, "Ship it", "ship it. (" + how + ")");
+for (const name in boxes) {
+  const sec = boxes[name].sec, ok = () => DRAG && colOf(DRAG) !== name;
+  sec.addEventListener("dragover", e => { if (!ok()) return; e.preventDefault(); e.dataTransfer.dropEffect = "move"; sec.classList.add("over"); });
+  sec.addEventListener("dragleave", e => { if (!sec.contains(e.relatedTarget)) sec.classList.remove("over"); });
+  sec.addEventListener("drop", e => {
+    if (!ok()) return; // a drop on the card's own column does nothing
+    e.preventDefault(); const c = DRAG; DRAG = null;
+    for (const n in boxes) boxes[n].sec.classList.remove("target", "over");
+    // Human test onto Ship it keeps its own wording, which the Router reads as the word to ship.
+    if (colOf(c) === "Human test" && name === "Ship it") shipAsk(c, "Dragged from Human test to Ship it on the board.");
+    else askMove(c, name, "moved from " + colOf(c) + " to " + name + " on the board.");
+  });
+}
+
+// Archive all, on the Deploy complete column: asks first, then sends the Router one message naming the cards shown.
+const SHOWN = {};
+{
+  const col = "Deploy complete", b0 = boxes[col], act = el("div", "colact");
+  b0.msg.before(act);
+  const idle = () => { const b = el("button", "more", "Archive all"); b.type = "button"; b.id = "archive-all"; b.addEventListener("click", sure); act.replaceChildren(b); return b; };
+  const sure = () => {
+    const list = (SHOWN[col] || []).slice();
+    b0.msg.classList.remove("ok");
+    if (!list.length) { colSay(col, "No cards here to archive."); return; }
+    const text = "Archive all Deploy complete cards: " + list.map(c => "#" + (c.n ?? c.id)).join(", ");
+    const yes = el("button", "more danger", "Archive all"), no = el("button", "more", "Cancel"); yes.type = no.type = "button";
+    colSay(col, "");
+    act.replaceChildren(el("span", "archq", "Archive all " + list.length + (list.length === 1 ? " card" : " cards") + " in " + col + "?"), yes, no);
+    no.addEventListener("click", () => idle().focus());
+    yes.addEventListener("click", async () => {
+      yes.disabled = no.disabled = true;
+      const m = el("span"); await ask(null, text, m, b0.sec);
+      const sent = m.textContent.startsWith("Sent");
+      b0.msg.classList.toggle("ok", sent);
+      colSay(col, sent ? "Sent to the Router: “" + text + "” The Router moves them to Done." : "Nothing archived. " + m.textContent);
+      idle();
+    });
+    no.focus();
+  };
+  idle();
+}
+
+/* filter:start */
+// Search and filters. Kinds combine with AND; values picked within one kind combine with OR.
+const NEEDS_ME = ["Plan review", "Human test", "Blocked"];
+const qList = c => [].concat(c.question || []).filter(q => q && q.text);
+// The Router records answers in the card's `answers`: [{q: <kind>, key, label, at}]. q may also be the question's text or its number.
+function answerFor(c, q, i) {
+  const hits = (Array.isArray(c.answers) ? c.answers : []).filter(a => a && a.key != null && a.q != null &&
+    ((q.kind && String(a.q) === String(q.kind)) || String(a.q) === String(q.text) || String(a.q) === String(i + 1)));
+  return hits.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))[0] || null;
+}
+const openQs = c => qList(c).filter((q, i) => !answerFor(c, q, i));
+const hasQuestion = c => openQs(c).length > 0;
+const repoOf = c => c.repo ? String(c.repo).split("/").pop() : "";
+const testerOf = c => (c.agents && c.agents.tester) || "not run";
+const sourceOf = c => c.source === "dsh" ? "Old board" : "Router";
+const waitDays = (c, now) => NEEDS_ME.includes(c.column) && c.since ? Math.floor((now - Date.parse(c.since)) / 864e5) : -1;
+const KINDS = [["repo", "Repo", repoOf], ["label", "Label", c => c.labels || []], ["tester", "Tester", testerOf], ["source", "From", sourceOf]];
+const blankFilter = () => ({ q: "", repo: [], label: [], tester: [], source: [], needs: false, late: false });
+// Returns 0 for no match, 1 for a match, 2 for a match found only in the status or next-step text.
+function matches(c, F, now) {
+  for (const [key, , get] of KINDS) {
+    if (!F[key].length) continue;
+    const have = [].concat(get(c));
+    if (!have.some(v => F[key].includes(v))) return 0;
+  }
+  if (F.needs && !NEEDS_ME.includes(c.column) && !hasQuestion(c)) return 0;
+  if (F.late && waitDays(c, now) < 3) return 0;
+  const q = F.q.trim().toLowerCase(); if (!q) return 1;
+  const low = a => a.map(x => x || "").join("\n").toLowerCase();
+  const main = low([c.title, c.repo, (c.labels || []).join(" ")]), notes = low([c.status, c.next]), num = String(c.n ?? c.id ?? "");
+  let rank = 1;
+  for (const w of q.split(/\s+/)) {
+    if (w[0] === "#" && w.length > 1) { if (!num.startsWith(w.slice(1))) return 0; continue; }
+    if ((/^\d+$/.test(w) && num.startsWith(w)) || main.includes(w)) continue;
+    if (w.length >= 3 && notes.includes(w)) { rank = 2; continue; }
+    return 0;
+  }
+  return rank;
+}
+const activeCount = F => (F.q.trim() ? 1 : 0) + F.repo.length + F.label.length + F.tester.length + F.source.length + (F.needs ? 1 : 0) + (F.late ? 1 : 0);
+/* filter:end */
+let F = blankFilter();
+try { const s = JSON.parse(localStorage.getItem("boardv2.filters") || "null"); if (s && typeof s === "object") { const b = blankFilter(); for (const k in b) if (typeof s[k] === typeof b[k] && Array.isArray(s[k]) === Array.isArray(b[k])) b[k] = s[k]; F = b; } } catch (e) {}
+function keepFilters() { try { localStorage.setItem("boardv2.filters", JSON.stringify(F)); } catch (e) {} }
+const WEAK = new Set(); // cards matched only in their status or next-step text; listed after the others
+let chipSig = "";
+function drawChips(cards) {
+  const opts = KINDS.map(([key, word, get]) => { const set = new Set(F[key]); cards.forEach(c => [].concat(get(c)).forEach(v => { if (v) set.add(v); })); return [key, word, [...set].sort()]; });
+  const sig = JSON.stringify([opts, F]); if (sig === chipSig) return; chipSig = sig;
+  const box = $("chips"), had = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.chip : null;
+  box.replaceChildren();
+  const chip = (id, word, on, flip) => {
+    const b = el("button", "fchip", word); b.type = "button"; b.dataset.chip = id; b.setAttribute("aria-pressed", String(!!on));
+    b.addEventListener("click", () => { flip(); keepFilters(); repaint(); }); box.append(b);
+  };
+  chip("needs", "Needs me", F.needs, () => { F.needs = !F.needs; });
+  chip("late", "Waiting 3+ days", F.late, () => { F.late = !F.late; });
+  opts.forEach(([key, word, vals]) => {
+    if (vals.length < 2 && !F[key].length) return;
+    box.append(el("span", "fkind", word));
+    vals.forEach(v => chip(key + ":" + v, v, F[key].includes(v), () => { F[key] = F[key].includes(v) ? F[key].filter(x => x !== v) : [...F[key], v]; }));
+  });
+  const n = activeCount(F), clear = $("clear");
+  clear.textContent = n ? "Clear filters (" + n + ")" : "Clear filters"; clear.disabled = !n;
+  if (had) { const again = [...box.children].find(x => x.dataset.chip === had); if (again) again.focus(); }
+}
+function render(cards) {
+  LAST = cards; if (DRAG) return -1;
+  const by = {}, total = {}; COLS.forEach(([name]) => { by[name] = []; total[name] = 0; });
+  const on = activeCount(F) > 0, now = Date.now(); let shown = 0; WEAK.clear();
+  cards.forEach(c => {
+    if (PENDING[c.id] && colOf(c) !== PENDING[c.id].from) { clearTimeout(PENDING[c.id].timer); delete PENDING[c.id]; }
+    const col = PENDING[c.id] ? PENDING[c.id].to : colOf(c);
+    total[col]++; const rank = matches(c, F, now); if (rank) { by[col].push(c); shown++; if (rank === 2) WEAK.add(c.id); }
+    if (V && V.c.id === c.id) liveRow(c);
+  });
+  for (const name in by) {
+    // Ship it lists cards in shipping order (shipOrder, lowest first); cards without one go last.
+    const order = c => name === "Ship it" && c.shipOrder != null && c.shipOrder !== "" && Number.isFinite(+c.shipOrder) ? +c.shipOrder : Infinity;
+    const doneAt = c => name === "Done" ? String(c.doneAt || "") : "";
+    by[name].sort((a, b) => (order(a) - order(b)) || WEAK.has(a.id) - WEAK.has(b.id) || doneAt(b).localeCompare(doneAt(a)) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")) || (b.n || 0) - (a.n || 0));
+    boxes[name].n.textContent = on ? by[name].length + " of " + total[name] : total[name];
+    SHOWN[name] = by[name];
+    boxes[name].box.replaceChildren(...(by[name].length ? by[name].map(card) : [el("p", "empty", total[name] ? "No matches." : EMPTY[name] || "Empty.")]));
+  }
+  drawChips(cards);
+  return shown;
+}
+let stampNow = null;
+function repaint() { const shown = render(LAST); if (stampNow && shown >= 0) stampNow(shown, LAST.length); }
+{
+  const q = $("q"); q.value = F.q;
+  q.addEventListener("input", () => { F.q = q.value; keepFilters(); repaint(); });
+  q.addEventListener("keydown", e => { if (e.key === "Escape" && q.value) { e.stopPropagation(); q.value = ""; F.q = ""; keepFilters(); repaint(); } });
+  $("clear").addEventListener("click", () => { F = blankFilter(); q.value = ""; keepFilters(); repaint(); q.focus(); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || $("veil") || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || "")) return;
+    e.preventDefault(); q.focus(); q.select();
+  });
+}
+
+function start(db) {
+  const stamp = $("stamp"), note = $("note");
+  DB = db;
+  if (!db) { stamp.textContent = "Sign in to claude.ai to see the cards."; return; }
+  const timer = setTimeout(() => { note.hidden = false; note.textContent = "The cards can't be reached yet. What you see may be out of date."; }, 10000);
+  // Open cards load live, and so do the 300 most recently done cards (newest doneAt first, no age limit).
+  let live = [], done = [];
+  const paint = () => {
+    const seen = new Set(), all = [];
+    [...live, ...done].forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); all.push(c); } });
+    stampNow = (shown, n) => { stamp.textContent = (shown < n ? shown + " of " + n : n) + " cards · refreshed " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
+    const shown = render(all); if (shown >= 0) stampNow(shown, all.length);
+  };
+  const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const fail = e => { clearTimeout(timer); note.hidden = false; note.textContent = "The cards stopped updating (" + (e && e.code || "error") + "). Reopen the page to reconnect."; };
+  db.collection("cards").where("column", "==", "Done").orderBy("doneAt", "desc").limit(300).onSnapshot(snap => { done = rows(snap); paint(); }, fail);
+  db.collection("cards").where("column", "!=", "Done").limit(1000).onSnapshot(snap => {
+    live = rows(snap); paint();
+    if (!snap.metadata.fromCache) { clearTimeout(timer); note.hidden = true; }
+  }, e => { clearTimeout(timer); note.hidden = false; note.textContent = "The cards stopped updating (" + (e && e.code || "error") + "). Reopen the page to reconnect."; });
+}
+render([]);
+window.claude.use("db").then(start);
+window.claude.use("comments").then(c => { CM = c; });
+</script>
