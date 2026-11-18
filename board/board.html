@@ -5,16 +5,16 @@
 /* Layout: a left-to-right board, one lane per column; the lanes that need the owner are tinted stronger. */
 :root {
   --bg: #f3f5f8; --surface: #ffffff; --fg: #18212b; --muted: #5d6b7a; --line: #d9dfe7;
-  --plan: #6b4fc4; --test: #b46a00; --stuck: #c23a3a; --run: #2767b8; --ship: #1f8a5b; --done: #7a8694;
+  --plan: #6b4fc4; --test: #b46a00; --stuck: #c23a3a; --run: #2767b8; --ship: #1f8a5b; --mail: #0f7f8c; --done: #7a8694;
   --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
   --body: Inter, "Segoe UI", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #11161c; --surface: #1a212a; --fg: #e6ebf1; --muted: #98a5b3; --line: #2c3743;
-  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --done: #8794a2; color-scheme: dark } }
+  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --mail: #4cc3cf; --done: #8794a2; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #11161c; --surface: #1a212a; --fg: #e6ebf1; --muted: #98a5b3; --line: #2c3743;
-  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --done: #8794a2; color-scheme: dark }
+  --plan: #a590ee; --test: #e2a23c; --stuck: #ee7b7b; --run: #6fa8ea; --ship: #56c492; --mail: #4cc3cf; --done: #8794a2; color-scheme: dark }
 body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 8px; }
 .wrap { display: flex; flex-direction: column; gap: 14px; }
@@ -73,6 +73,19 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .linkbtn.danger { color: var(--stuck); border-color: var(--stuck); font-weight: 600; }
 .arch { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .archq { font-size: .86rem; font-weight: 600; }
+.email { flex-basis: 100%; border: 1px solid color-mix(in srgb, var(--mail) 55%, var(--line)); border-left: 4px solid var(--mail); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; background: color-mix(in srgb, var(--mail) 5%, var(--surface)); }
+.email h3 { font-size: .9rem; margin: 0; color: var(--mail); }
+.email .erow { display: grid; grid-template-columns: 64px 1fr auto; gap: 8px; align-items: start; }
+.email .ek { color: var(--muted); font-size: .8rem; padding-top: 3px; }
+.email .ev { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; font-size: .9rem; }
+.email .ev.body { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--surface); }
+.email .enone, .email .enote { color: var(--muted); font-size: .84rem; }
+@media (max-width: 520px) { .email .erow { grid-template-columns: 1fr auto; } .email .ek { grid-column: 1 / -1; padding: 0; } }
+.cardarch { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cardarch button { font: inherit; font-size: .72rem; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px; cursor: pointer; }
+.cardarch button.danger { color: var(--stuck); border-color: var(--stuck); }
+.cardarch .archq { font-size: .74rem; }
+.cardarch button:focus-visible { outline: 2px solid var(--run); outline-offset: 1px; }
 .colact { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .more.danger { color: var(--stuck); border-color: var(--stuck); font-weight: 600; }
 .colmsg.ok { color: var(--muted); }
@@ -488,7 +501,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 <script>
 const COLS = [["Backlog", "run"], ["Blocked", "stuck", "Stuck"], ["Planning", "run"], ["Plan review", "plan", "Needs you: planning"],
   ["In progress", "run"], ["Human test", "test", "Needs you: testing"], ["Ship it", "run"],
-  ["Deploy complete", "ship", "Shipped"], ["Done", "done", "Archived"]];
+  ["Deploy complete", "ship", "Shipped"], ["Email customer", "mail", "Needs you: send the email"], ["Done", "done", "Archived"]];
 const EMPTY = { "Plan review": "No plans waiting for you.", "Human test": "Nothing waiting for your test.", "Blocked": "Nothing is stuck." };
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -568,9 +581,59 @@ function card(c) {
     b.addEventListener("keydown", e => e.stopPropagation());
     meta.append(b);
   }
+  if (!PENDING[c.id] && ARCH_COLS.includes(c.column)) meta.append(tileArchive(c));
   d.addEventListener("click", () => { if (Date.now() - dragEnd > 400) openCard(c); });
   d.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(c); } });
   return d;
+}
+// Per-card Archive on the tiles in Deploy complete and Email customer (card #1030): asks first, then sends
+// the Router the same "archive." message as the full view's Archive. The page never moves the card itself.
+const ARCH_COLS = ["Deploy complete", "Email customer"];
+function tileArchive(c) {
+  const wrap = el("span", "cardarch"), num = "#" + (c.n ?? c.id), col = colOf(c);
+  ["click", "keydown", "pointerdown", "mousedown"].forEach(t => wrap.addEventListener(t, e => e.stopPropagation()));
+  wrap.addEventListener("dragstart", e => { e.preventDefault(); e.stopPropagation(); });
+  const idle = () => { const b = el("button", "", "Archive"); b.type = "button"; b.title = "Archive " + num; b.setAttribute("aria-label", "Archive " + num); b.addEventListener("click", sure); wrap.replaceChildren(b); return b; };
+  const sure = () => {
+    const yes = el("button", "danger", "Archive"), no = el("button", "", "Cancel"); yes.type = no.type = "button";
+    wrap.replaceChildren(el("span", "archq", "Archive " + num + "?"), yes, no);
+    no.addEventListener("click", () => idle().focus());
+    yes.addEventListener("click", async () => {
+      yes.disabled = no.disabled = true;
+      const m = el("span"); await ask(c, "archive.", m);
+      const sent = m.textContent.startsWith("Sent");
+      boxes[col].msg.classList.toggle("ok", sent);
+      colSay(col, sent ? "Sent to the Router: “Card " + num + ": archive.” The Router moves it to Done." : num + " not archived. " + m.textContent);
+      if (wrap.isConnected) idle();
+    });
+    no.focus();
+  };
+  idle(); return wrap;
+}
+// The drafted customer email on a card in Email customer (card #1030), from the card row's `email` {to, subject, body}.
+// All text goes in as text nodes, never as HTML. No send button: The owner sends it, or tells the Router to.
+async function copyText(text, node, btn) {
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (e) {}
+  if (!ok) {
+    try { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); ok = document.execCommand("copy"); } catch (e) {}
+    if (!ok) { btn.textContent = "Selected: press Ctrl+C"; return; }
+  }
+  btn.textContent = "Copied"; setTimeout(() => { if (btn.isConnected) btn.textContent = "Copy"; }, 1500);
+}
+function emailBlock(c) {
+  const box = el("div", "email"); box.append(el("h3", "", "Email to the customer"));
+  const e = c.email && typeof c.email === "object" ? c.email : null;
+  const str = v => Array.isArray(v) ? v.map(String).join(", ") : v == null ? "" : String(v);
+  if (!e || !(str(e.to) || str(e.subject) || str(e.body))) { box.append(el("div", "enone", "Draft coming from the Router")); return box; }
+  [["To", str(e.to), ""], ["Subject", str(e.subject), ""], ["Body", str(e.body), " body"]].forEach(([k, val, cls]) => {
+    const row = el("div", "erow"), v = el("div", "ev" + cls, val || "(empty)");
+    const b = el("button", "linkbtn", "Copy"); b.type = "button"; b.setAttribute("aria-label", "Copy " + k.toLowerCase()); b.disabled = !val;
+    b.addEventListener("click", () => copyText(val, v, b));
+    row.append(el("span", "ek", k), v, b); box.append(row);
+  });
+  box.append(el("div", "enote", "The owner sends this himself. To have the Router send it, tell the Router in chat."));
+  return box;
 }
 let CM = null;
 async function ask(c, text, msg, where) {
@@ -947,6 +1010,7 @@ function drawFacts() {
     idle(); links.append(wrap);
   }
   if (links.children.length) box.append(links);
+  if (c.column === "Email customer") box.append(emailBlock(c));
 }
 // ---- Plan tab (the picture-first layout) and the pieces it shares ----
 const arr = v => Array.isArray(v) ? v : [];
@@ -1499,7 +1563,7 @@ function liveRow(c) {
   v.rowSig = sig; v.nextRow = c; v.stale = true; refreshWhenIdle();
 }
 function busy(v) {
-  if ($("zoom") || document.querySelector("#sheet .arch .archq") || document.querySelector("#archive-all.busy")) return true;
+  if ($("zoom") || document.querySelector("#sheet .arch .archq, .cardarch .archq") || document.querySelector("#archive-all.busy")) return true;
   return Date.now() - (v.touched || 0) < 10000;
 }
 function refreshWhenIdle() {

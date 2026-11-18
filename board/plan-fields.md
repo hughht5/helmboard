@@ -40,6 +40,16 @@ What a click sends (through the comment sent to Claude):
 
 The page never clears `question`. Remove the field (or the entry) when you have acted, and the block goes on the next snapshot.
 
+`email` (card #1030): `{ to, subject, body }`, all strings (`to` may also be a list). Shown only on a card in the
+**Email customer** column, as To / Subject / Body with a Copy button each. Plain text: line breaks kept, never read as
+HTML. With no `email` the block says "Draft coming from the Router". There is no send button: The owner sends it himself,
+or tells the Router in chat that it may send that one. Remove `email` when the card leaves the column if you like; the
+page ignores it in other columns.
+
+Columns after Ship it: **Deploy complete** → **Email customer** (only cards that need a customer email) → **Done**.
+Each card in Deploy complete and Email customer has its own Archive button on the tile and in the full view; it sends
+`Card #<n>: archive.`, the same message as the full view's Archive.
+
 ## On the detail row (`cards/<n>/detail/full`)
 
 | Field | Shape | Used for |
