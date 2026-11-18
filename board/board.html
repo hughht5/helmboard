@@ -1413,7 +1413,16 @@ const SVG_TAGS = new Set(["svg", "g", "path", "rect", "circle", "ellipse", "line
 const SVG_ATTRS = new Set(["id", "class", "viewbox", "width", "height", "x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "d", "points", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "opacity", "transform", "font-size", "font-family", "font-weight", "font-style", "text-anchor", "dominant-baseline", "alignment-baseline", "letter-spacing", "dx", "dy", "rotate", "textlength", "lengthadjust", "offset", "stop-color", "stop-opacity", "gradientunits", "gradienttransform", "spreadmethod", "fx", "fy", "markerwidth", "markerheight", "markerunits", "refx", "refy", "orient", "marker-start", "marker-mid", "marker-end", "clip-path", "clip-rule", "mask", "clippathunits", "maskunits", "patternunits", "patterncontentunits", "patterntransform", "preserveaspectratio", "role", "aria-label", "aria-hidden", "aria-roledescription", "xmlns", "href", "xlink:href", "style", "visibility", "display", "vector-effect", "shape-rendering", "paint-order", "text-decoration", "white-space", "xml:space"]);
 const CSS_BAD = /url\s*\(\s*['"]?\s*(?!#)|image-set|src\s*\(|@font-face|@import|expression\s*\(|javascript:|behavio(u)?r\s*:|-moz-binding|\\|<\/?/i;
 // A cleaned drawing goes into its own closed shadow root, so any <style> in it reaches only the drawing.
-function mountSvg(box, svg) { const host = el("div", "wsvg"), root = host.attachShadow({ mode: "closed" }); root.append(svg); box.append(host); }
+function mountSvg(box, svg) {
+  // The drawing's :host rules can restyle the host (shadow !important beats inline), so the host sits in a clip:
+  // a light-DOM wrapper the drawing cannot reach, with containment so fixed or oversized content stays inside it.
+  const clip = el("div", "wclip"), host = el("div", "wsvg"), root = host.attachShadow({ mode: "closed" });
+  ["position:relative", "display:block", "overflow:hidden", "contain:strict", "isolation:isolate", "transform:translateZ(0)", "z-index:0"].forEach(d => { const [k, v] = d.split(":"); clip.style.setProperty(k, v, "important"); });
+  root.append(svg); clip.append(host); box.append(clip);
+  // contain:strict needs a size: follow the drawing's own height, read from inside the clip.
+  const fit = () => { clip.style.setProperty("height", Math.min(1600, Math.max(20, svg.getBoundingClientRect().height || 0)) + "px", "important"); };
+  requestAnimationFrame(fit); if (window.ResizeObserver) new ResizeObserver(fit).observe(svg);
+}
 function cleanSvg(text) {
   if (text.length > 400000) return null;
   let doc;
