@@ -65,3 +65,5 @@ with --no-verify.
 Ask the Router, never the owner. The Router answers for him within his standing words; a Router message quoting the owner is his word.
 
 - Queue a card on a merge lane only after its critic has passed on the final head (lesson: #1017 v32 published before the second critic pass, 18 Nov 2026).
+
+- Before any push after a rebase: `git status` must be clean (no rebase in progress). Lesson #217, 18 Nov 2026: a paused rebase was pushed, the branch emptied and GitHub closed PR 1945 for good.
