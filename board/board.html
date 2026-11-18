@@ -223,6 +223,29 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .fkind { flex: none; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-left: 8px; }
 #clear { flex: none; white-space: nowrap; }
 @media (max-width: 700px) { .fbar { flex-wrap: wrap; } #q { flex: 1 1 160px; } .fchips { order: 3; flex-basis: 100%; } }
+/* Phone (card #1031, the owner 18 Nov 2026): one column at a time, a sticky switcher of every column with its count, swipe to move. Desktop unchanged. */
+#colnav { display: none; }
+@media (max-width: 700px) {
+  body { padding-bottom: 0; }
+  .wrap { gap: 10px; }
+  #colnav { display: flex; flex: none; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px 4px; position: sticky; top: 0; z-index: 2; background: var(--bg); }
+  #colnav::-webkit-scrollbar { display: none; }
+  #colnav button { --c: var(--run); font: inherit; font-size: .82rem; flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; box-sizing: border-box; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  #colnav button::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+  #colnav button.you { border-color: color-mix(in srgb, var(--c) 60%, var(--line)); font-weight: 600; }
+  #colnav button.you::after { content: "you"; font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--c); }
+  #colnav button .k { font-variant-numeric: tabular-nums; min-width: 1.6em; text-align: center; font-size: .75rem; font-weight: 600; border-radius: 999px; padding: 0 5px; background: var(--line); }
+  #colnav button.q .k { background: var(--plan); color: var(--surface); }
+  #colnav button[aria-current="true"] { background: var(--c); border-color: var(--c); color: var(--surface); }
+  #colnav button[aria-current="true"].you::after { color: var(--surface); }
+  #colnav button[aria-current="true"] .k { background: var(--surface); color: var(--fg); }
+  #colnav button:focus-visible { outline: 2px solid var(--run); outline-offset: 1px; }
+  .board { display: block; overflow: hidden; padding-bottom: 0; touch-action: pan-y; }
+  .board > section { display: none; height: 100%; max-height: none; }
+  .board > section.on { display: flex; }
+  .board > section .cards { flex: 1; padding-bottom: 12px; }
+  .card[draggable] { cursor: pointer; }
+}
 /* Drag to ship */
 .card[draggable="true"] { cursor: grab; }
 .card.asked { border-style: dashed; border-left-style: solid; cursor: default; }
@@ -495,6 +518,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
     <div class="fchips" id="chips" role="group" aria-label="Filters"></div>
     <button id="clear" class="more" type="button" disabled>Clear filters</button>
   </div>
+  <nav id="colnav" aria-label="Columns"></nav>
   <div class="board" id="board"></div>
 </div>
 
@@ -565,7 +589,7 @@ function card(c) {
   if (PENDING[c.id]) { d.classList.add("asked"); d.append(el("div", "why", "Asked the Router…")); }
   else {
     // Any card drags to any other column. A drop only tells the Router; the page never writes the card's column.
-    d.draggable = true;
+    d.draggable = !PHONE.matches;
     d.addEventListener("dragstart", e => { DRAG = c; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", "#" + (c.n ?? c.id)); for (const name in boxes) if (name !== colOf(c)) boxes[name].sec.classList.add("target"); });
     d.addEventListener("dragend", () => { DRAG = null; dragEnd = Date.now(); for (const name in boxes) boxes[name].sec.classList.remove("target", "over"); repaint(); });
   }
@@ -1669,6 +1693,54 @@ COLS.forEach(([name, tone, sub]) => {
   const box = el("div", "cards"); sec.append(box); $("board").append(sec); boxes[name] = { box, n, sec, msg };
 });
 
+
+// Phone view (card #1031): under 700px one column shows at a time. The switcher lists every column with its count;
+// swipe left or right moves between them. The choice is kept per device.
+const PHONE = matchMedia("(max-width: 700px)"), NAV = {};
+let MCOL = null, mPicked = false;
+try { const s = localStorage.getItem("boardv2.mcol"); if (s && COLS.some(x => x[0] === s)) { MCOL = s; mPicked = true; } } catch (e) {}
+COLS.forEach(([name, tone, sub]) => {
+  const b = el("button"); b.type = "button"; b.style.setProperty("--c", "var(--" + tone + ")");
+  if (sub && tone !== "ship" && tone !== "done") b.classList.add("you");
+  b.append(document.createTextNode(name), el("span", "k", "0"));
+  b.addEventListener("click", () => showCol(name, true));
+  $("colnav").append(b); NAV[name] = b;
+});
+if (MCOL) queueMicrotask(() => showCol(MCOL, false));
+function showCol(name, keep) {
+  MCOL = name;
+  if (keep) { mPicked = true; try { localStorage.setItem("boardv2.mcol", name); } catch (e) {} }
+  for (const n in NAV) { const on = n === name; NAV[n].setAttribute("aria-current", String(on)); boxes[n].sec.classList.toggle("on", on); }
+  const b = NAV[name], nav = $("colnav");
+  if (PHONE.matches && b.offsetParent) nav.scrollTo({ left: b.offsetLeft - (nav.clientWidth - b.offsetWidth) / 2, behavior: keep ? "smooth" : "auto" });
+}
+function navCounts(cards) {
+  const total = {}, qs = {}; COLS.forEach(([n]) => { total[n] = 0; qs[n] = 0; });
+  cards.forEach(c => { const col = PENDING[c.id] ? PENDING[c.id].to : colOf(c); total[col]++; if (hasQuestion(c)) qs[col]++; });
+  for (const n in NAV) {
+    NAV[n].querySelector(".k").textContent = boxes[n].n.textContent;
+    NAV[n].classList.toggle("q", qs[n] > 0);
+    NAV[n].title = n + ": " + total[n] + (qs[n] ? " (" + qs[n] + " with questions for you)" : "");
+  }
+  if (!mPicked && cards.some(c => c.column !== "Done")) { // wait for the open cards; the Done list can land first
+    // First visit on this device: the first column that needs the owner and has cards, else the first with cards.
+    const you = COLS.filter(([n]) => NAV[n].classList.contains("you") && (total[n] || qs[n]));
+    const q = COLS.find(([n]) => qs[n]);
+    const pick = (you[0] || q || COLS.find(([n]) => total[n]) || COLS[0])[0];
+    mPicked = true; showCol(pick, false);
+  } else if (!MCOL) showCol(COLS[0][0], false);
+}
+{
+  const bd = $("board"); let x0 = null, y0 = 0, t0 = 0;
+  bd.addEventListener("touchstart", e => { if (!PHONE.matches || e.touches.length !== 1) { x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); }, { passive: true });
+  bd.addEventListener("touchend", e => {
+    if (x0 == null || $("veil")) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < 1.5 * Math.abs(dy) || Date.now() - t0 > 800) return;
+    const i = COLS.findIndex(x => x[0] === MCOL), j = i + (dx < 0 ? 1 : -1);
+    if (j >= 0 && j < COLS.length) showCol(COLS[j][0], true);
+  }, { passive: true });
+  PHONE.addEventListener("change", () => { if (MCOL) showCol(MCOL, false); repaint(); });
+}
 // Drag a card onto another column: the page shows it there at once and sends the Router one message.
 // PENDING holds each asked-for move ({from, to, timer}) until the Router changes the row, or three minutes pass.
 const PENDING = {}; let DRAG = null, dragEnd = 0, LAST = [];
@@ -1813,7 +1885,7 @@ function render(cards) {
     SHOWN[name] = by[name];
     boxes[name].box.replaceChildren(...(by[name].length ? by[name].map(card) : [el("p", "empty", total[name] ? "No matches." : EMPTY[name] || "Empty.")]));
   }
-  drawChips(cards);
+  drawChips(cards); navCounts(cards);
   return shown;
 }
 let stampNow = null;
