@@ -63,3 +63,5 @@ with --no-verify.
 
 ## Questions go to the Router
 Ask the Router, never the owner. The Router answers for him within his standing words; a Router message quoting the owner is his word.
+
+- Queue a card on a merge lane only after its critic has passed on the final head (lesson: #1017 v32 published before the second critic pass, 18 Nov 2026).
