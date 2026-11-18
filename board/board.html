@@ -56,6 +56,13 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
   padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
 #sheet { background: var(--surface); color: var(--fg); border-radius: 12px; width: 95vw; height: 93vh; max-width: 100%; max-height: 100%; border-top: 5px solid var(--c); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(0, 0, 0, .45); box-sizing: border-box; }
 #sheet > header { flex: none; padding: 18px 26px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
+#sheet .barr { display: flex; gap: 10px; align-items: center; flex: none; }
+.cardnav { display: flex; gap: 6px; align-items: center; font-size: .8rem; color: var(--muted, #888); font-variant-numeric: tabular-nums; }
+.cardnav button { font: inherit; font-size: 1.1rem; line-height: 1; width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: inherit; cursor: pointer; }
+.cardnav button:disabled { opacity: .35; cursor: default; }
+.cardnav button:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+.cardnav #cardpos.end { color: var(--c); }
+@media (max-width: 700px) { #sheet .bar { flex-wrap: wrap; } #sheet .barr { margin-left: auto; } }
 #sheet .bar { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
 #sheet h2 { font-size: 1.45rem; line-height: 1.25; display: block; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 #sheet h2::before { content: none; }
@@ -1622,7 +1629,20 @@ function closeCard() {
   const was = shown, id = was && was.dataset ? was.dataset.id : null; shown = null;
   holdFocus(() => $("veil") ? null : was && was.isConnected ? was : id ? document.querySelector('.card[data-id="' + CSS.escape(id) + '"]') : null);
 }
-function openCard(c) {
+// Card #1032: step through the open card's column, in its shown order (search and filters applied).
+function colPlace(c) {
+  for (const name in SHOWN) { const i = (SHOWN[name] || []).findIndex(x => x.id === c.id); if (i >= 0) return { name, list: SHOWN[name], i }; }
+  return null;
+}
+function stepCard(d) {
+  const v = V; if (!v || $("zoom")) return;
+  const p = colPlace(v.c); if (!p) return;
+  const j = p.i + d;
+  if (j < 0 || j >= p.list.length) { const h = $("cardpos"); if (h) { h.textContent = d > 0 ? "Last card in " + p.name : "First card in " + p.name; h.classList.add("end"); setTimeout(() => { if (h.isConnected) { h.classList.remove("end"); h.textContent = (p.i + 1) + " of " + p.list.length + " in " + p.name; } }, 1400); } return; }
+  const keep = shown; openCard(p.list[j], v.tab); shown = keep;
+}
+function openCard(c, wantTab) {
+  const fromBtn = document.activeElement && /^card(next|prev)$/.test(document.activeElement.id) ? document.activeElement.id : "";
   const v0 = $("veil"); if (v0) v0.remove(); const z0 = $("zoom"); if (z0) z0.remove();
   shown = document.activeElement;
   const tone = (COLS.find(x => x[0] === c.column) || [0, "run"])[1];
@@ -1635,7 +1655,8 @@ function openCard(c) {
   tabs.setAttribute("role", "tablist"); pane.setAttribute("role", "tabpanel");
   const names = [["test", "Test"], ["plan", "Plan"], ["history", "History"], ["details", "Details"]];
   if (c.column === "Blocked") names.unshift(["needs", "What it needs"]);
-  const first = ["Human test", "Deploy complete"].includes(c.column) ? "test" : c.column === "Blocked" ? "needs" : "plan";
+  let first = ["Human test", "Deploy complete"].includes(c.column) ? "test" : c.column === "Blocked" ? "needs" : "plan";
+  if (wantTab && names.some(x => x[0] === wantTab)) first = wantTab;
   const v = V = { c, f: {}, loaded: !DB, rev: {}, cur: null, shot: 0, tab: first, facts, tabs, pane, qbox: el("div", "qbox"), agentsEl: el("div", "agents"), qSent: {}, qOpen: {}, touched: 0, saveMsg: "" };
   names.forEach(([id, word]) => {
     const t = el("button", "tab", word); t.type = "button"; t.id = "tab-" + id; t.dataset.tab = id; t.setAttribute("role", "tab");
@@ -1648,13 +1669,24 @@ function openCard(c) {
     e.preventDefault(); e.stopPropagation(); const t = all[(i + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length]; t.click(); t.focus();
   });
   v.agentsEl.setAttribute("aria-label", "Subagents run on this card");
-  bar.append(h, close); head.append(bar, facts, v.agentsEl, tabs);
+  const nav = el("div", "cardnav"), prevB = el("button", "", "\u2039"), nextB = el("button", "", "\u203a"), pos = el("span", "", "");
+  prevB.type = nextB.type = "button"; prevB.id = "cardprev"; nextB.id = "cardnext"; pos.id = "cardpos"; pos.setAttribute("aria-live", "polite");
+  prevB.setAttribute("aria-label", "Card above (Left arrow)"); nextB.setAttribute("aria-label", "Card below (Right arrow)");
+  prevB.title = "Card above (\u2190)"; nextB.title = "Card below (\u2192)";
+  const pl = colPlace(c);
+  if (pl) { pos.textContent = (pl.i + 1) + " of " + pl.list.length + " in " + pl.name; prevB.disabled = pl.i === 0; nextB.disabled = pl.i === pl.list.length - 1; }
+  else nav.hidden = true;
+  prevB.addEventListener("click", () => stepCard(-1)); nextB.addEventListener("click", () => stepCard(1));
+  nav.append(prevB, pos, nextB);
+  const right = el("div", "barr"); right.append(nav, close);
+  bar.append(h, right); head.append(bar, facts, v.agentsEl, tabs);
   sheet.append(head, v.qbox, pane, decisionBar(c)); veil.append(sheet); document.body.append(veil);
   // Any sign of use holds back live redraws for 10 seconds (see liveRow).
   const touch = () => { v.touched = Date.now(); };
   ["pointerdown", "keydown", "input", "wheel", "focusin", "touchstart"].forEach(t => sheet.addEventListener(t, touch, true));
   sheet.addEventListener("scroll", touch, true);
-  drawFacts(); drawQuestion(); drawPane(); close.focus();
+  drawFacts(); drawQuestion(); drawPane();
+  { const fb = fromBtn && $(fromBtn); (fb && !fb.disabled ? fb : fromBtn ? (fromBtn === "cardnext" ? prevB : nextB) : close).focus(); }
   close.addEventListener("click", () => { const z = $("zoom"); if (z) z.remove(); closeCard(); });
   veil.addEventListener("click", e => { if (e.target === veil) close.click(); });
   if (!DB) return;
@@ -1673,6 +1705,10 @@ function openCard(c) {
 document.addEventListener("keydown", e => {
   const z = $("zoom");
   if (z && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const s = z._shots, i = +z.dataset.i; zoom(s, (i + (e.key === "ArrowRight" ? 1 : s.length - 1)) % s.length); return; }
+  if (!z && $("veil") && (e.key === "ArrowRight" || e.key === "ArrowLeft") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    const t = e.target || {}; if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "") || t.isContentEditable || (t.closest && t.closest('[role="tablist"]'))) return;
+    e.preventDefault(); stepCard(e.key === "ArrowRight" ? 1 : -1); return;
+  }
   if (e.key === "Escape" && (z || $("veil"))) { e.preventDefault(); e.stopPropagation(); closeCard(); return; }
   const root = z || $("sheet");
   if (e.key === "Tab" && root) {
