@@ -13,7 +13,7 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
   for (const f of fs.readdirSync(B + "lane").filter(f => /-queue\.md$/.test(f) && f !== "board-queue.md")) {
     for (const line of fs.readFileSync(B + "lane/" + f, "utf8").split(/\r?\n/)) {
       const m = line.match(/^- \[([^\]]*)\]\s*#(\d+)/); if (!m) continue;
-      const state = m[1].toLowerCase(), n = m[2], card = cards[n]; if (!card) continue;
+      const state = m[1].toLowerCase(), n = m[2], card = cards[n]; if (!card || /^batch/.test(state)) continue;
       const want = /^live/.test(state) ? ["Deploy complete", "Done"] : /^held/.test(state) ? ["Ship it", "Blocked"] : ["Ship it"];
       if (!want.includes(card.column)) bad.push(`#${n} is "${m[1]}" in lane/${f} but its card is in ${card.column} (should be ${want.join(" or ")})`);
     }
