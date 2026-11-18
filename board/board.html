@@ -59,6 +59,7 @@ section { flex: 1 0 250px; max-height: 100%; box-sizing: border-box; display: fl
 /* Empty columns shrink so the busy ones get the room. */
 section:has(> .cards > p.empty:only-child) { flex: 0 0 170px; }
 section:has(> .cards > p.empty:only-child) .cards { opacity: .8; }
+section:has(> .cards > p.empty:only-child) h2 { white-space: normal; }
 section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .sub { font-size: .75rem; font-weight: 600; color: var(--c); text-transform: uppercase; letter-spacing: .06em; margin: -6px 0 0 18px; }
 .cards { display: flex; flex-direction: column; gap: 8px; }
