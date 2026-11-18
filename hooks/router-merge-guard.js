@@ -1,19 +1,18 @@
-// PreToolUse hook (Bash, PowerShell): among the Router's own sessions, only a merge lane may
-// merge a pull request or push to main.
+// PreToolUse hook (Bash, PowerShell): only a merge lane may merge or push to main, and only
+// among the Router's own sessions. Added 18 Nov 2026.
 //
-// It applies to the sessions listed in <ROUTER_DIR>/lane/guard.json:
-//   { "router": "<id>", "family": ["<id>", ...], "lanes": ["<id>", ...] }
-// A session listed under "lanes" is allowed. Any other session on the machine (one the owner
-// opens directly) is never blocked. If the guard file is missing, nothing is blocked.
-// The session id is read from CLAUDE_CODE_HOST_SESSION_ID.
+// Who it applies to: the sessions listed in <ROUTER_DIR>/lane/guard.json
+// (the Router and every session it started). A session listed under "lanes" is allowed.
+// Any other session on this machine, such as one the owner opens himself, is never blocked.
+// If the guard file is missing or unreadable, nothing is blocked.
+// Undo: remove this file's entry from PreToolUse in ~/.claude/settings.json.
 const fs = require("fs");
-const cfg = require("./config");
 let raw = "";
 process.stdin.on("data", d => (raw += d));
 process.stdin.on("end", () => {
   let cmd = "", guard;
   try { cmd = String((JSON.parse(raw).tool_input || {}).command || ""); } catch (e) { process.exit(0); }
-  try { guard = JSON.parse(fs.readFileSync(cfg.file("lane", "guard.json"), "utf8")); } catch (e) { process.exit(0); }
+  try { guard = JSON.parse(fs.readFileSync(require("./config").file("lane/guard.json"), "utf8")); } catch (e) { process.exit(0); }
   const me = process.env.CLAUDE_CODE_HOST_SESSION_ID || "";
   const family = new Set([guard.router, ...(guard.family || [])].filter(Boolean));
   const lanes = new Set(guard.lanes || []);

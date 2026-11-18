@@ -1,4 +1,4 @@
-<title>Board V2</title>
+<title>Router Board</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
@@ -234,6 +234,9 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 .tab .badge { display: inline-block; margin-left: 6px; font-size: .7rem; font-weight: 700; background: var(--test); color: var(--surface); border-radius: 999px; padding: 0 7px; }
 .qline { margin: 0; font-size: .95rem; line-height: 1.45; max-width: 100ch; overflow-wrap: anywhere; }
 .qopt.rec { border-color: var(--ship); }
+.testlinks { display: flex; flex-wrap: wrap; gap: 8px; }
+.linkbtn.stack, .linkbtn.login { font-weight: 600; border-color: color-mix(in srgb, var(--run) 50%, var(--line)); }
+.linkbtn.stack::before, .linkbtn.login::before { content: "↗ "; }
 .qopt.chosen { border: 2px solid var(--ship); background: color-mix(in srgb, var(--ship) 12%, var(--surface)); }
 .qopt.chosen:disabled, .plan .decn .qopt.chosen:disabled, .qbox .qopt.chosen:disabled { opacity: 1; color: var(--fg); }
 .qopt .pick { color: var(--ship); font-weight: 700; font-size: .78rem; }
@@ -579,6 +582,39 @@ function parseHow(text) {
 /* parser:end */
 const isHow = t => /^\s*HOW TO TEST/i.test(t || "");
 const lines = v => Array.isArray(v) ? v.join("\n") : String(v || "");
+/* logins:start */
+// Dev sign-in buttons from the card's `logins`: [{label, persona, url}]. The owner allowed this one kind of sign-in link
+//: http on 127.0.0.1 or localhost, path exactly /dev-signin.html, query keys `as`, `next` and `ct` only.
+// `ct` is only the packed form "as-<admin|user>.<base64url of a same-site path>", never a token.
+// Anything else (another host or path, a user or password, a #fragment, any other key or ct value) drops the link.
+const samePath = p => typeof p === "string" && p.length <= 300 && p.startsWith("/") && !p.startsWith("//") && !p.includes("\\") && !/[\u0000-\u001f\u007f]/.test(p);
+function packedPath(b64) {
+  if (!/^[A-Za-z0-9_-]{1,400}$/.test(b64)) return null;
+  try { const s = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64.length + 3) % 4)); return samePath(s) ? s : null; } catch (e) { return null; }
+}
+function safeLogin(raw) {
+  let u; try { u = new URL(String(raw || "")); } catch (e) { return null; }
+  if (u.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(u.hostname)) return null;
+  if (u.username || u.password || u.hash || u.pathname !== "/dev-signin.html") return null;
+  const keys = [...u.searchParams.keys()];
+  if (keys.some(k => !["as", "next", "ct"].includes(k)) || new Set(keys).size !== keys.length) return null;
+  let as = u.searchParams.get("as"); const next = u.searchParams.get("next"), ct = u.searchParams.get("ct");
+  if (as != null && !/^[\w.@+-]{1,80}$/.test(as)) return null;
+  if (next != null && !samePath(next)) return null;
+  if (ct != null) {
+    const m = ct.match(/^as-(admin|user)(?:\.([A-Za-z0-9_-]+))?$/);
+    if (!m || (m[2] && !packedPath(m[2]))) return null;
+    as = as || m[1];
+  }
+  return { url: u.href, host: u.host, as };
+}
+function loginLinks(c) {
+  return (Array.isArray(c && c.logins) ? c.logins : []).map(L => {
+    const ok = L && safeLogin(L.url); if (!ok) return null;
+    return { url: ok.url, host: ok.host, persona: L.persona ? String(L.persona) : "", label: String(L.label || L.persona || ok.as || "test user").slice(0, 60) };
+  }).filter(Boolean);
+}
+/* logins:end */
 function testData(c, f) {
   const text = c.how || f.how || [f.next, c.next].find(isHow) || "", T = parseHow(text);
   if (Array.isArray(f.steps) && f.steps.length) T.steps = f.steps.map((s, i) => typeof s === "string" ? { n: String(i + 1), text: s, pass: "" } : { n: String(i + 1), text: String(s.text || ""), pass: String(s.pass || "") });
@@ -743,6 +779,14 @@ function drawTest(pane) {
     if (!steps.some(s => s.n === v.cur)) v.cur = (steps.find(s => !v.rev[s.n]) || steps[0] || {}).n || null;
     const done = steps.filter(s => v.rev[s.n]).length;
     const s0 = sec(todo, "Your test", steps.length ? done + " of " + steps.length + " done" : "");
+    // Ways in to the test stack sit first, above the intro and the steps: the stack itself, then one sign-in per test persona.
+    const logins = loginLinks(v.c), hasStack = /^https?:\/\//.test(T.stack || "");
+    if (hasStack || logins.length) {
+      const row = el("div", "testlinks");
+      if (hasStack) { const a = el("a", "linkbtn stack", "Open test stack"); a.href = T.stack; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = T.stack; row.append(a); }
+      logins.forEach(L => { const a = el("a", "linkbtn login", "Open as " + L.label); a.href = L.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = (L.persona ? L.persona + " · " : "") + L.host; row.append(a); });
+      s0.append(row);
+    }
     if (T.intro) { const h = el("div", "hint"); String(T.intro).split(/(https?:\/\/[^\s,)]+)/).forEach((p, i) => { if (i % 2) { const u = p.replace(/[.;:]+$/, ""), a = el("a", "", u); a.href = u; a.target = "_blank"; a.rel = "noopener"; h.append(a, p.slice(u.length)); } else if (p) h.append(p); }); s0.append(h); }
     if (!steps.length) s0.append(el("p", "prose", v.loaded ? "No test steps are written for this card. The Plan tab says what it is." : "Loading…"));
     const box = el("div", "steps"); let focusMe = null;
@@ -840,7 +884,6 @@ function drawFacts() {
   }
   const links = el("div", "links"), link = (text, href) => { const a = el("a", "linkbtn", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; links.append(a); };
   const is = issueOf(c.issue || f.issue); if (is && /^https:\/\//.test(is.url || "")) link(is.n ? "Issue #" + is.n : "Issue", is.url);
-  const stack = testData(c, f).stack; if (stack) link("Open test stack", stack);
   const pr = prOf(c); if (pr && pr.url) link(pr.n ? "PR #" + pr.n : "PR", pr.url);
   if (c.session) { const go = el("button", "linkbtn", "Open session"); go.type = "button"; go.addEventListener("click", () => ask(c, "open this card's session beside you.", V.said)); links.append(go); }
   if (c.column !== "Done") {

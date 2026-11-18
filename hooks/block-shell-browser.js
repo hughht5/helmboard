@@ -1,7 +1,7 @@
 // PreToolUse hook (Bash, PowerShell): refuse commands that start Edge or Chrome from the shell.
-// Added after a session ran a headless browser for screenshots and the owner got error pop-ups.
+// Added 18 Nov 2026 after a session ran headless Edge for screenshots and the owner got error pop-ups.
 // To see a page rendered, sessions use the Claude in Chrome tools instead.
-// Undo: remove the PreToolUse entry for this file from your settings.json.
+// Undo: remove the PreToolUse entry for this file from ~/.claude/settings.json.
 let raw = "";
 process.stdin.on("data", d => (raw += d));
 process.stdin.on("end", () => {
@@ -22,7 +22,7 @@ process.stdin.on("end", () => {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "deny",
-        permissionDecisionReason: "Blocked: starting Edge or Chrome from the shell is not allowed. To see a page rendered, use the Claude in Chrome tools in a tab of your own. Do not try another way of launching a browser.",
+        permissionDecisionReason: "Blocked: starting Edge or Chrome from the shell is not allowed on this machine. To see a page rendered, use the Claude in Chrome tools in a tab of your own. Do not try another way of launching a browser.",
       },
     }));
   }

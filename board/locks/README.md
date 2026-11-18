@@ -1,11 +1,12 @@
 # Locks: shared things only one session may change at a time
 
-Sessions often share one test database, the same test logins and one browser. Before you
-change any of these, take its lock; release it the moment you are done.
+Sessions share one test database, the same test logins and one Chrome. Before you change
+any of these, take its lock; release it the moment you are done.
 
-- `persona-<name>.lock`: changing a test person's role, permissions, limits or membership.
-  Reading as them needs no lock.
-- `org-<name>.lock`: changing a test organisation's or workspace's settings.
+- `persona-<email>.lock`: changing a test person's role, permissions, limits or membership
+  (for example making test-user@example.com a Viewer, or draft-only). Reading as them needs no lock.
+- `org-<name>.lock`: changing an organisation's settings (for example Demo Org's email
+  sending mode).
 - `ports.md`: not a lock, a list. Add a line with your card and the ports your dev stack
   uses before you start it; pick ports nobody has listed; remove the line when you stop it.
 
@@ -18,6 +19,6 @@ lock that is not yours.
 
 ## board.html
 
-Any session may edit the board page, one at a time. Take the lock by writing your card number
+Any session may edit the board's page, one at a time. Take the lock by writing your card number
 and session id to `locks/board-html.lock`, and delete the file once you have published. If the
 file exists, wait. Each board change is its own card.

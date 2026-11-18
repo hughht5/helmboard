@@ -2,7 +2,7 @@
 
 What the board's Plan tab and subagents strip read, and where each field lives. Every field is optional: the page leaves a block out when its data is missing. The page only reads these; the Router writes them.
 
-The code that reads them is `drawPlan`, `drawAgents` and `questionControls` in `board.html`.
+Agreed with the Router on 18 Nov 2026 (card #1006). The code that reads them is `drawPlan`, `drawAgents` and `questionControls` in `board.html`.
 
 ## Text marking
 
@@ -78,39 +78,332 @@ Counters beside the headline are worked out by the page: number of parts, number
 
 Parts not named in any ship appear in a last stop, "Not in a ship yet" (or "Parts" when there are no ships at all).
 
-## A small example
+## A complete example
 
-`card` holds the card-row fields and `detail` the detail-row fields.
+SEC-12, as drawn in `mockups/plan-tab-v2.html`. The same content is in `mockups/plan-fields-example.json`. `card` holds the card-row fields and `detail` the detail-row fields.
 
 ```json
 {
   "card": {
-    "agents": { "planner": "passed", "critic": "passed" },
+    "agents": {
+      "router": "passed",
+      "planner": "passed",
+      "critic": "passed"
+    },
     "question": [
       {
         "kind": "Scope",
-        "text": "Export totals only, in two parts?",
-        "points": [{ "text": "CSV and PDF exports" }, { "text": "No schema change", "no": true }],
-        "options": [{ "key": "yes", "label": "Yes" }, { "key": "no", "label": "No" }],
+        "text": "Filter SQL only, in these three parts?",
+        "points": [
+          {
+            "text": "Every dashboard filter, sent or saved"
+          },
+          {
+            "text": "No parameter binding, no new wire shape, no migration",
+            "no": true
+          },
+          {
+            "text": "Typed SQL stays out (SEC-09)",
+            "no": true
+          }
+        ],
+        "options": [
+          {
+            "key": "yes",
+            "label": "Yes"
+          },
+          {
+            "key": "no",
+            "label": "No"
+          }
+        ],
         "recommended": "yes",
-        "askedAt": "2026-01-01T10:00:00Z"
+        "askedAt": "2026-11-12T10:00:00Z"
+      },
+      {
+        "kind": "The rule",
+        "text": "The server's definition always wins?",
+        "points": [
+          {
+            "text": "Matches a definition → the definition's SQL"
+          },
+          {
+            "text": "A real column, no definition → plain `column = value`"
+          },
+          {
+            "text": "Anything else → refused",
+            "no": true
+          }
+        ],
+        "options": [
+          {
+            "key": "yes",
+            "label": "Yes"
+          },
+          {
+            "key": "no",
+            "label": "No"
+          }
+        ],
+        "recommended": "yes",
+        "askedAt": "2026-11-12T10:00:00Z"
+      },
+      {
+        "kind": "Ship order",
+        "text": "Ship the boot guard first, on its own?",
+        "points": [
+          {
+            "text": "#206 leaves the stack and ships in about a day"
+          },
+          {
+            "text": "#207 and #208 follow, together"
+          },
+          {
+            "text": "Its undo is one named override, no deploy"
+          }
+        ],
+        "options": [
+          {
+            "key": "yes",
+            "label": "Yes",
+            "detail": "Two ships"
+          },
+          {
+            "key": "no",
+            "label": "No",
+            "detail": "One ship, all three parts"
+          }
+        ],
+        "recommended": "yes",
+        "askedAt": "2026-11-12T10:00:00Z"
       }
     ]
   },
   "detail": {
-    "agentNotes": { "planner": "Plan written", "critic": "Passed, 2 notes", "tester": "After the build" },
+    "agentNotes": {
+      "router": "Split into 3 parts",
+      "planner": "Plan written, 12 Nov",
+      "critic": "Passed, 8 notes",
+      "tester": "After the build",
+      "reviewer": "After the build"
+    },
     "plan": {
-      "goal": "Export totals {match the screen}. Totals ~rounded twice~ are gone.",
+      "goal": "The server {writes every filter's SQL itself}. SQL ~from the browser~ or ~from a saved filter~ is never run.",
+      "picture": {
+        "title": "Where the filter SQL comes from",
+        "lanes": [
+          {
+            "when": "Today",
+            "note": "can be forged",
+            "tone": "bad",
+            "steps": [
+              {
+                "who": "Browser",
+                "title": "Sends values and SQL",
+                "text": "A member can put anything in `filter.sql`",
+                "hot": true
+              },
+              {
+                "who": "Server",
+                "title": "Pastes that SQL into the query",
+                "text": "Safe only while one setting is on. In code it defaults to off.",
+                "hot": true
+              },
+              {
+                "who": "BigQuery",
+                "title": "Runs it",
+                "text": "Inside the member's own organisation's data"
+              }
+            ],
+            "arrows": [
+              "values + SQL",
+              "forged SQL goes through"
+            ]
+          },
+          {
+            "when": "After",
+            "note": "server-built",
+            "tone": "good",
+            "steps": [
+              {
+                "who": "Browser",
+                "part": 208,
+                "title": "Sends values only",
+                "text": "Never receives or sends SQL. Old tabs keep working."
+              },
+              {
+                "who": "Server",
+                "part": 207,
+                "title": "Builds the SQL from its own filter definitions",
+                "hot": true,
+                "gates": [
+                  {
+                    "text": "Forged or unknown filter: refused",
+                    "tone": "no"
+                  },
+                  {
+                    "text": "Production won't boot with the setting off",
+                    "tone": "lock",
+                    "part": 206
+                  }
+                ]
+              },
+              {
+                "who": "BigQuery",
+                "title": "Runs it",
+                "text": "Honest filters give the same numbers"
+              }
+            ],
+            "arrows": [
+              "values only",
+              "server-built SQL only"
+            ]
+          }
+        ]
+      },
       "parts": [
-        { "n": 1, "title": "One rounding helper", "size": "S", "stage": "Plan" },
-        { "n": 2, "title": "Exports use it", "size": "M", "waits": "Waits on #1", "stage": "Plan" }
+        {
+          "n": 206,
+          "title": "Boot guard",
+          "size": "S",
+          "text": "Production refuses to start unless the tenant reader is enforced.",
+          "waits": "Waits on nothing · issue #1909",
+          "stage": "Plan"
+        },
+        {
+          "n": 207,
+          "title": "Server builds the SQL",
+          "size": "M",
+          "text": "Every filter is rebuilt from the server's definitions, on every route. Saves strip SQL.",
+          "waits": "Waits on nothing · issue #826",
+          "stage": "Plan"
+        },
+        {
+          "n": 208,
+          "title": "No SQL in the browser",
+          "size": "M",
+          "text": "The browser gets and sends values only. One strict request shape.",
+          "waits": "Waits on #207 · issue #826",
+          "stage": "Plan"
+        }
       ],
-      "start": { "title": "Your answer", "text": "Then you move it to In progress" },
-      "ships": [{ "label": "Ship 1", "title": "Both parts together", "parts": [1, 2] }],
-      "end": { "title": "4 checks pass" },
-      "risks": [{ "risk": "Old exports change", "cover": "A test pins last month's totals" }],
-      "undo": [{ "parts": [1, 2], "text": "Revert the one PR." }],
-      "outOfScope": ["Currency formatting"]
+      "start": {
+        "label": "Now",
+        "title": "Your 3 answers",
+        "text": "Then you move it to In progress"
+      },
+      "ships": [
+        {
+          "label": "Ship 1 · about a day",
+          "title": "Boot guard, alone",
+          "parts": [
+            206
+          ]
+        },
+        {
+          "label": "Ship 2 · together",
+          "title": "One PR, one Human test, one ship",
+          "parts": [
+            207,
+            208
+          ]
+        }
+      ],
+      "end": {
+        "label": "Done",
+        "title": "7 checks pass",
+        "text": "Closes #826, #1909, #1163"
+      },
+      "risks": [
+        {
+          "risk": "An honest filter is refused",
+          "cover": "Parity proof on test must show zero differences"
+        },
+        {
+          "risk": "A renamed option is refused",
+          "cover": "Clear the filter caches and run the refresh job after deploy"
+        },
+        {
+          "risk": "Two options share a name",
+          "cover": "New test: names are unique per table, column and join"
+        },
+        {
+          "risk": "Old tabs still send SQL",
+          "cover": "Old keys are stripped, not refused"
+        },
+        {
+          "risk": "The guard stops production booting",
+          "cover": "One override, no deploy (see undo)"
+        }
+      ],
+      "undo": [
+        {
+          "parts": [
+            206
+          ],
+          "text": "Set `ALLOW_TENANT_IDENTITY_NOT_ENFORCED=\"<reason>\"` in one gcloud command. No deploy."
+        },
+        {
+          "parts": [
+            207,
+            208
+          ],
+          "text": "Revert the one PR. Nothing to migrate back."
+        }
+      ],
+      "undoNote": "No saved filter holds SQL (census, 10 Nov), so no data changes.",
+      "outOfScope": [
+        {
+          "name": "Typed SQL",
+          "note": "SEC-09"
+        },
+        {
+          "name": "Parameter binding"
+        },
+        {
+          "name": "A new wire shape"
+        },
+        {
+          "name": "Any migration"
+        },
+        {
+          "name": "BUG-15",
+          "note": "its own card"
+        },
+        {
+          "name": "Filter permissions",
+          "note": "stay display-only"
+        }
+      ],
+      "folds": [
+        {
+          "title": "Critic's notes",
+          "note": "8, all for the build",
+          "items": [
+            "#207's own summary still gives the old rule. Update it to the definition rule before it builds.",
+            "`valueOk` refuses values with a backslash (`filterTrust.ts:39`). Watch for it in the parity proof."
+          ]
+        },
+        {
+          "title": "Code references",
+          "note": "checked on main 9315990d9, 12 Nov",
+          "pairs": [
+            [
+              "Where SQL is pasted",
+              "`filterSql.ts:565-570`, `:608-611` (`rawPredicate`)"
+            ],
+            [
+              "Branch",
+              "`card-194-sec12-server-built-filters`"
+            ]
+          ]
+        },
+        {
+          "title": "What's already closed",
+          "note": "before this card",
+          "text": "Production runs every chart and export query as the organisation's own read-only reader.\nThe statement must be one SELECT."
+        }
+      ]
     }
   }
 }

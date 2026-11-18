@@ -8,8 +8,6 @@ time through a per-repo merge lane. A private claude.ai artifact is the board yo
 click. It exists because running five or ten agent sessions by hand means losing track of
 which is stuck, which drifted, and which two are about to merge over each other.
 
-![Screenshot of the board: placeholder, add docs/board.png](docs/board.png)
-
 ## What you need first
 
 - The **Claude Code desktop app** (the Router uses its session tools to start, watch and open
@@ -83,7 +81,9 @@ Example `settings.json` snippet (the whole of `settings.example.json`, one event
 ```
 
 On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
-(`C:/Users/<you>/.claude/hooks/router/...`).
+(`C:/Users/<you>/.claude/hooks/router/...`). The hooks find your home folder through Node
+(`USERPROFILE` on Windows), not `$HOME`, so to keep the board anywhere other than
+`~/router-board` set `ROUTER_DIR` (and `ROUTER_SKILL` for the skill) in your environment.
 
 ## How it works
 
