@@ -14,7 +14,7 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
     for (const line of fs.readFileSync(B + "lane/" + f, "utf8").split(/\r?\n/)) {
       const m = line.match(/^- \[([^\]]*)\]\s*#(\d+)/); if (!m) continue;
       const state = m[1].toLowerCase(), n = m[2], card = cards[n]; if (!card || /^(batch|pending)/.test(state)) continue; // pending = approved but still being built: card stays In progress
-      const want = /^live/.test(state) ? ["Deploy complete", "Done"] : /^held/.test(state) ? ["Ship it", "Blocked"] : ["Ship it"];
+      const want = (/\blive\b/.test(state) && !/not live|\bred\b|\bfailed\b|rolled back/.test(state)) ? ["Deploy complete", "Final action needed", "Email customer", "Done"] : /^held/.test(state) ? ["Ship it", "Blocked"] : ["Ship it"];
       if (!want.includes(card.column)) bad.push(`#${n} is "${m[1]}" in lane/${f} but its card is in ${card.column} (should be ${want.join(" or ")})`);
     }
   }
