@@ -19,6 +19,8 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
     }
   }
   for (const k of Object.values(cards)) if (k && k.column === "In progress" && !k.session) bad.push(`#${k.n} is In progress with no session working on it (give it a session or move it to Backlog)`);
+  // Deploy complete -> post to Slack #product. Card needs slackPosted once posted.
+  for (const k of Object.values(cards)) if (k && /your-app/.test(k.repo || "") && ["Deploy complete", "Final action needed", "Done"].includes(k.column) && k.source !== "dsh" && !k.slackPosted && !k.noSlack) bad.push(`#${k.n} is live but not posted to Slack #product (C0ALAMB66MB): post a one-line customer-facing note, then set slackPosted on the card in cards.json (or noSlack: true for internal-only work)`);
   if (!bad.length) process.exit(0);
   process.stdout.write(JSON.stringify({ decision: "block", reason: "Cards out of place. Fix the board row and cards.json now, then finish:\n- " + bad.join("\n- ") }));
   process.exit(0);
