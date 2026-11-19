@@ -177,9 +177,10 @@ the queue is `lane/<repo>-queue.md`.
 - When the owner says ship a card: move it to Ship it, add its line to the bottom of the queue
   with his words, and message the lane. That is all you do. You do not merge, and the
   card's own session does not rebase, pick a version or write the changelog.
-- Start a lane the first time a repo has a card to ship (brief: read the rules and the
-  queue, follow them). At start-up, check each queue for cards not yet `live` and that its
-  lane session is alive; start one if not.
+- Start a repo's lane straight away: when the repo gets its first card, and at start-up for every
+  repo with open cards, if its lane session isn't alive (brief: read the rules and the queue,
+  follow them). Don't wait for the first ship. If the app refuses the start (a turn the user
+  didn't type), say in one line: "Say go to start the merge lane for <repo>."
 - The lane tells you each state change. On `merged`, tell every other open card in that
   repo to rebase when it next reaches a clean point. On `live`, move the card to Deploy
   complete. On `held`, move it to Blocked with the lane's reason as a question for the owner.
