@@ -185,7 +185,15 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .sec { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: none; background: none; padding: 0; border-radius: 0; max-height: none; }
 .sec > h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 600; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: var(--fg); }
 .sec > h3 small { font-family: var(--body); font-size: .82rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
-.prose { font-size: 1rem; line-height: 1.65; max-width: 72ch; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.prose { font-size: 1rem; line-height: 1.65; max-width: 72ch; overflow-wrap: anywhere; margin: 0; }
+.prose p, .qtext p, .nt p { margin: 0; white-space: pre-wrap; }
+.prose p + p, .prose ul + p, .prose p + ul, .qtext p + p, .qtext ul + p, .qtext p + ul { margin-top: .5em; }
+.prose ul, .qtext ul, .nt ul { margin: .2em 0; padding-left: 1.3em; }
+.prose li, .qtext li, .nt li { white-space: pre-wrap; margin: .15em 0; }
+.plan .folds :is(.prose, .qtext, .nt) ul, .card .why ul { display: block; margin: .2em 0; padding-left: 1.3em; }
+.why p { margin: 0; white-space: pre-wrap; }
+.why li { white-space: pre-wrap; }
+.chip.run-on { font-variant-numeric: tabular-nums; }
 .callout { border-left: 4px solid var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-radius: 0 8px 8px 0; padding: 14px 18px; max-width: 78ch; box-sizing: border-box; }
 .checks { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; max-width: 96ch; background: var(--surface); }
 .check { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; padding: 11px 14px; align-items: start; font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; }
@@ -727,50 +735,6 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 :root[data-style="riso"] #zoom { background: #181a26; }
 :root[data-style="riso"] #zoom .stage img { box-shadow: 10px 8px 0 rgba(255,72,140,.7); border: 3px solid #f3ecdf; }
 
-/* #1037 Monet: impressionist garden. Broken dabbed colour, soft light, hazy edges; water-lily palette. */
-:root[data-style="monet"] {
-  --bg: #e9eee4; --surface: #fbf8f3; --fg: #283350; --muted: #4a5470; --line: #8b9cb4;
-  --plan: #6a4a98; --test: #87570e; --stuck: #a33157; --run: #2d5a88; --ship: #3b6a44; --mail: #1d676d; --done: #59606e;
-  --display: "Cormorant Garamond", Garamond, Georgia, serif; --body: "Mulish", "Segoe UI", sans-serif; color-scheme: light;
-  --lilac: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .09' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .66 0 0 0 0 .55 0 0 0 0 .84 0 0 0 1.4 -.72'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
-  --sage: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.05 .16' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .70 0 0 0 0 .52 0 0 0 1.4 -.72'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
-  --rose: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.06 .2' numOctaves='2' seed='21' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .70 0 0 0 0 .76 0 0 0 1.5 -.85'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark) { :root[data-style="monet"]:not([data-theme="light"]) {
-  --bg: #1b2236; --surface: #252e47; --fg: #f1ecf4; --muted: #cbc7da; --line: #7384aa;
-  --plan: #cdb3f2; --test: #f0c987; --stuck: #f4a3bd; --run: #9fc4ec; --ship: #a9d6a6; --mail: #8fd6d6; --done: #bfc3cf; color-scheme: dark; } }
-:root[data-style="monet"][data-theme="dark"] {
-  --bg: #1b2236; --surface: #252e47; --fg: #f1ecf4; --muted: #cbc7da; --line: #7384aa;
-  --plan: #cdb3f2; --test: #f0c987; --stuck: #f4a3bd; --run: #9fc4ec; --ship: #a9d6a6; --mail: #8fd6d6; --done: #bfc3cf; color-scheme: dark; }
-@media (prefers-color-scheme: dark) { :root[data-style="monet"]:not([data-theme="light"]) { --lilac: linear-gradient(transparent, transparent); --rose: radial-gradient(ellipse 30% 18% at 30% 40%, rgba(242,184,198,.10), transparent 70%); } }
-:root[data-style="monet"][data-theme="dark"] { --lilac: linear-gradient(transparent, transparent); --rose: radial-gradient(ellipse 30% 18% at 30% 40%, rgba(242,184,198,.10), transparent 70%); }
-@media (prefers-color-scheme: dark) { :root[data-style="monet"]:not([data-theme="light"]) .chip.tag { color: hsl(var(--h) 70% 80%); border-color: hsl(var(--h) 50% 65%); background: rgba(0,0,0,.2); } }
-:root[data-style="monet"][data-theme="dark"] .chip.tag { color: hsl(var(--h) 70% 80%); border-color: hsl(var(--h) 50% 65%); background: rgba(0,0,0,.2); }
-:root[data-style="monet"] body { font-size: 14px; background: var(--rose), var(--lilac), var(--sage),
-  radial-gradient(ellipse 40% 22% at 12% 18%, color-mix(in srgb, #a9c4a0 45%, transparent), transparent 70%),
-  radial-gradient(ellipse 34% 20% at 86% 72%, color-mix(in srgb, #c9b6e4 45%, transparent), transparent 70%),
-  radial-gradient(ellipse 50% 30% at 60% 8%, color-mix(in srgb, #f6e3a1 30%, transparent), transparent 70%),
-  linear-gradient(180deg, color-mix(in srgb, #9cc3dd 22%, var(--bg)), var(--bg) 60%), var(--bg); background-attachment: fixed; }
-:root[data-style="monet"] h1 { font-size: 2.5rem; font-weight: 700; font-style: italic; letter-spacing: .01em; text-shadow: 0 0 14px color-mix(in srgb, #c9b6e4 70%, transparent), 0 0 2px color-mix(in srgb, #f2b8c6 60%, transparent); }
-:root[data-style="monet"] h1 span { color: var(--plan); }
-:root[data-style="monet"] h2 { font-size: 1.45rem; font-style: italic; font-weight: 700; }
-:root[data-style="monet"] h2::before { border-radius: 50%; filter: blur(.6px); box-shadow: 0 0 6px var(--c); }
-:root[data-style="monet"] .board > section { background: color-mix(in srgb, var(--surface) 42%, transparent); border: 0; border-radius: 30px 44px 34px 40px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 30%, transparent), 0 10px 30px -18px color-mix(in srgb, var(--c) 60%, transparent); }
-:root[data-style="monet"] .card { background: var(--lilac), var(--surface); border: 0; border-radius: 18px 26px 20px 24px; box-shadow: inset 4px 0 0 -1px color-mix(in srgb, var(--c) 70%, transparent), 0 0 0 1px color-mix(in srgb, var(--line) 35%, transparent), 0 8px 18px -10px color-mix(in srgb, var(--c) 55%, transparent); }
-:root[data-style="monet"] .card:hover { box-shadow: inset 4px 0 0 -1px var(--c), 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 10px 26px -8px color-mix(in srgb, var(--c) 70%, transparent); }
-:root[data-style="monet"] #sheet { border: 0; border-radius: 28px; background: var(--rose), var(--lilac), var(--surface); box-shadow: inset 0 8px 0 -2px color-mix(in srgb, var(--c) 75%, transparent), 0 0 0 1px color-mix(in srgb, var(--line) 40%, transparent), 0 30px 60px -20px rgba(40,51,80,.45); }
-:root[data-style="monet"] .more, :root[data-style="monet"] .linkbtn, :root[data-style="monet"] .stepbtn, :root[data-style="monet"] .fchip, :root[data-style="monet"] #style, :root[data-style="monet"] #q { border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 999px; }
-:root[data-style="monet"] :is(.tab, .qopt, .dec button, .dec input, .say, #close, .cardnav button, #colnav button, .film button, .chip, .pill, .agents, .callout, .stagebox, .step, .email, .run, .noev) { border-radius: 16px; }
-:root[data-style="monet"] :is(.agents, .callout, .stagebox, .email, .run, .noev, .step.cur) { border: 1px solid color-mix(in srgb, var(--line) 50%, transparent); box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--c, var(--plan)) 60%, transparent); }
-:root[data-style="monet"] .tab { font-size: 1.15rem; font-style: italic; font-weight: 700; }
-:root[data-style="monet"] .tab[aria-selected="true"] { background: color-mix(in srgb, var(--c) 14%, var(--surface)); border-bottom: 3px solid color-mix(in srgb, var(--c) 70%, transparent); }
-:root[data-style="monet"] :is(.ev, .todo, #sheet > header) { background: var(--sage), var(--surface); }
-:root[data-style="monet"] .sec > h3, :root[data-style="monet"] .ev .label { font-size: 1.2rem; font-style: italic; text-transform: none; letter-spacing: 0; }
-:root[data-style="monet"] :is(.linkbtn, .stepbtn, .more, .fchip, #q, #style) { background-color: var(--surface); }
-:root[data-style="monet"] #colnav button[aria-current="true"] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 70%, transparent), 0 4px 12px -4px var(--c); }
-:root[data-style="monet"] #zoom { background: var(--lilac), var(--sage), #1b2236; }
-:root[data-style="monet"] #zoom .stage img { border-radius: 18px; box-shadow: 0 0 0 6px rgba(251,248,243,.85), 0 0 40px 8px rgba(201,182,228,.55); }
-
 /* #1037 Street stencil: cut-out silhouettes sprayed on a concrete wall, black and white with one red. */
 :root[data-style="stencil"] {
   --bg: #d6d3cc; --surface: #f3f1ec; --fg: #111111; --muted: #383838; --line: #111111;
@@ -875,53 +839,6 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 :root[data-style="wildstyle"] #zoom { background: radial-gradient(ellipse at 20% 20%, rgba(255,45,127,.3), transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(51,214,255,.25), transparent 60%), #120c24; }
 :root[data-style="wildstyle"] #zoom .stage img { border: 4px solid var(--ink); box-shadow: 8px 8px 0 #ffbe0b, 14px 14px 0 #ff2d7f; border-radius: 10px; }
 
-/* Chrome glitch: polished chrome, spectrum gradients, halftone and sliced, RGB-split scanlines */
-:root[data-style="chrome"] {
-  --bg: #06060b; --surface: #f3f5fa; --fg: #f2f4ff; --muted: #c0c6dc; --line: #3a3f5c;
-  --plan: #b892ff; --test: #ffd166; --stuck: #ff5c95; --run: #4cc9ff; --ship: #4dffa6; --mail: #2ef2e0; --done: #b2b9cc;
-  --display: "Space Grotesk", "Arial Black", sans-serif; --body: "Space Grotesk", "Segoe UI", sans-serif; color-scheme: dark;
-  --spec: linear-gradient(90deg, #ff2bd6, #ff8a00, #ffe600, #36ff9a, #00f0ff, #4b6bff, #b13cff);
-  --chrome: linear-gradient(180deg, #ffffff 0%, #c4cfdf 36%, #3a4660 50%, #dfe7f5 56%, #8f9bb1 82%, #f4f7ff 100%);
-}
-:root[data-style="chrome"] body {
-  background:
-    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.035) 3px 4px),
-    radial-gradient(circle, rgba(255,255,255,.10) 1.1px, transparent 1.6px) 0 0 / 9px 9px,
-    linear-gradient(112deg, transparent 0 46%, rgba(255,43,214,.32) 46% 49%, rgba(255,138,0,.30) 49% 52%, rgba(255,230,0,.28) 52% 55%, rgba(0,240,255,.30) 55% 58%, rgba(75,107,255,.32) 58% 61%, transparent 61%),
-    linear-gradient(112deg, transparent 0 12%, rgba(0,240,255,.12) 12% 13%, transparent 13% 80%, rgba(255,43,214,.14) 80% 82%, transparent 82%),
-    radial-gradient(ellipse 50% 40% at 85% 10%, rgba(75,107,255,.28), transparent 70%),
-    radial-gradient(ellipse 40% 40% at 5% 90%, rgba(255,43,214,.20), transparent 70%),
-    #06060b;
-}
-:root[data-style="chrome"] h1 { font-family: "Rubik Glitch", var(--display); font-weight: 400; font-size: 3.1rem; line-height: 1.05;
-  background: var(--spec) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(-2px 0 0 rgba(0,240,255,.9)) drop-shadow(2px 0 0 rgba(255,43,214,.9)) drop-shadow(0 0 16px rgba(75,107,255,.55)); }
-:root[data-style="chrome"] h1 span { color: transparent; background: var(--chrome); -webkit-background-clip: text; background-clip: text; }
-:root[data-style="chrome"] h2 { font-size: .92rem; font-weight: 700; letter-spacing: .06em; color: var(--c); text-shadow: -1.5px 0 rgba(255,43,214,.85), 1.5px 0 rgba(0,240,255,.85); }
-:root[data-style="chrome"] h2 .count { background: var(--chrome); color: #06060b; text-shadow: none; border-radius: 0; }
-:root[data-style="chrome"] #sheet h2 { color: var(--fg); text-shadow: none; text-transform: none; letter-spacing: 0; }
-:root[data-style="chrome"] .board > section { background: var(--spec) top / 100% 5px no-repeat, linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.14); border-radius: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.5); }
-:root[data-style="chrome"] .card { --fg: #0b0d18; --muted: #3e4459; --line: #0b0d18; color: var(--fg); background: linear-gradient(160deg, #ffffff 0%, #e4e9f3 52%, #f7f9ff 100%) #e4e9f3; border: 0; border-left: 6px solid var(--c); border-radius: 0; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); box-shadow: none; filter: drop-shadow(-3px 0 0 rgba(255,43,214,.85)) drop-shadow(3px 0 0 rgba(0,240,255,.85)); }
-:root[data-style="chrome"] .card a { color: #1d3fd6; }
-:root[data-style="chrome"] .chip.tag { color: #0b0d18; border-color: #0b0d18; background: #fff; }
-:root[data-style="chrome"] :is(.more, .fchip, #style, #q) { background: #0d0e18; color: #f2f4ff; border: 1px solid #4cc9ff; border-radius: 0; }
-:root[data-style="chrome"] .fchip[aria-pressed="true"] { background: var(--spec); color: #06060b; border-color: #fff; font-weight: 700; }
-:root[data-style="chrome"] .more:disabled { color: #b2b9cc; }
-:root[data-style="chrome"] #colnav button { background: #0d0e18; color: #f2f4ff; border: 1px solid rgba(255,255,255,.2); border-radius: 0; }
-:root[data-style="chrome"] #colnav button[aria-current="true"] { background: var(--chrome); color: #06060b; box-shadow: -2px 0 0 #ff2bd6, 2px 0 0 #00f0ff; }
-:root[data-style="chrome"] #colnav button[aria-current="true"] .ci { color: #06060b; }
-:root[data-style="chrome"] #sheet { --fg: #0b0d18; --muted: #3e4459; --line: #b8bfd0; --bg: #e7ebf3; --run: #0b5cad; --test: #8a5200; --ship: #157046; --stuck: #b1123a; --plan: #6b2fb3; --mail: #0a6b72; --done: #5c5f66; color: var(--fg); border: 0; border-top: 10px solid var(--c); border-radius: 0; box-shadow: -7px 0 0 #ff2bd6, 7px 0 0 #00f0ff, 0 30px 80px rgba(0,0,0,.7); }
-:root[data-style="chrome"] #sheet > header { background: var(--spec) top / 100% 6px no-repeat, linear-gradient(180deg, #ffffff, #eef1f7); }
-:root[data-style="chrome"] :is(.tab, .qopt, .dec button, .dec input, .say, #close, .cardnav button, .film button, .chip, .pill, .agents, .callout, .stagebox, .step, .email, .run, .noev) { border-radius: 0; }
-:root[data-style="chrome"] :is(.qopt, .dec button, #close, .cardnav button, .agents, .callout, .stagebox, .email, .run, .noev, .step.cur) { border: 1.5px solid #0b0d18; box-shadow: -3px 0 0 rgba(255,43,214,.7), 3px 0 0 rgba(0,240,255,.7); }
-:root[data-style="chrome"] #sheet .tab { font-size: .8rem; letter-spacing: .06em; color: #3e4459; }
-:root[data-style="chrome"] #sheet .tab[aria-selected="true"] { color: #fff; background: #06060b; border-bottom: 4px solid var(--c); box-shadow: -2px 0 0 #ff2bd6, 2px 0 0 #00f0ff; }
-:root[data-style="chrome"] #sheet :is(.stepbtn, .linkbtn, .more) { border: 2px solid #0b0d18; border-radius: 0; box-shadow: -3px 3px 0 #ff2bd6; font-weight: 700; }
-:root[data-style="chrome"] #sheet .more { background: #fff; color: #0b0d18; }
-:root[data-style="chrome"] #sheet .dec button.go { background: #157046; color: #fff; }
-:root[data-style="chrome"] #zoom { background: radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1.6px) 0 0 / 9px 9px, #06060b; }
-:root[data-style="chrome"] #zoom .stage img { box-shadow: -8px 0 0 #ff2bd6, 8px 0 0 #00f0ff; }
-
 /* Radiant line figures: thick black marker outlines, flat bold colour, radiating motion marks on a white wall */
 :root[data-style="radiant"] {
   --bg: #fffaea; --surface: #ffffff; --fg: #111111; --muted: #383838; --line: #111111;
@@ -962,53 +879,14 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 
 /* #1042 motion: gentle, and off for reduced motion */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-style="chrome"] h1 { animation: g42-spec 7s linear infinite; }
   :root[data-style="wildstyle"] h1::before { animation: g42-tw 1.8s ease-in-out infinite; }
   :root[data-style="radiant"] h1::before, :root[data-style="radiant"] h1::after { animation: g42-tw 1.2s steps(2) infinite; }
   .ci .g42-tw { animation: g42-tw 1.8s ease-in-out infinite; }
-  .ci .g42-gl { animation: g42-gl 3.4s steps(1) infinite; }
   .ci .g42-rad { animation: g42-tw 1s steps(2) infinite; }
-  :root[data-style="chrome"] .card:hover { animation: g42-jit .35s steps(2) 1; }
 }
-@keyframes g42-spec { to { background-position: 200% 0; } }
 @keyframes g42-tw { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-@keyframes g42-gl { 0%, 86%, 100% { transform: translate(0, 0); } 88% { transform: translate(2.5px, 0); } 92% { transform: translate(-2px, 0); } }
-@keyframes g42-jit { 50% { transform: translateX(2px); } }
-@media (max-width: 600px) { :root[data-style="wildstyle"] h1, :root[data-style="chrome"] h1, :root[data-style="radiant"] h1, :root[data-style="graffiti"] h1 { font-size: 2.15rem; } }
+@media (max-width: 600px) { :root[data-style="wildstyle"] h1, :root[data-style="radiant"] h1, :root[data-style="graffiti"] h1 { font-size: 2.15rem; } }
 
-/* #1043 Cape dusk (after David Griessel): twilight African landscapes, silhouetted trees against an amber horizon, layered textured paint. Evoked, no artwork copied. */
-:root[data-style="capedusk"] {
-  --bg: #1c1730; --surface: #2a2240; --fg: #f7ede0; --muted: #dccdbf; --line: #8d789c;
-  --plan: #d8bdf3; --test: #f4c57e; --stuck: #f6a693; --run: #aecbea; --ship: #bcd8a0; --mail: #98d6c9; --done: #cdc4d0; --amber: #e9a14f;
-  --display: "Cormorant", Georgia, serif; --body: "Lora", Georgia, serif; color-scheme: dark;
-  --impasto: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.02 .22' numOctaves='3' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .96 0 0 0 0 .78 0 0 0 0 .62 0 0 0 1.3 -.78'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
-  --treeline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='200' viewBox='0 0 1200 200' preserveAspectRatio='none'%3E%3Cpath d='M0 120Q150 90 300 112T620 100T900 118T1200 96V200H0z' fill='%233a2a48'/%3E%3Cpath d='M0 150Q200 128 420 146T820 136T1200 150V200H0z' fill='%23281d36'/%3E%3Cg fill='%23140f22'%3E%3Crect x='176' y='118' width='7' height='46'/%3E%3Cellipse cx='180' cy='112' rx='46' ry='13'/%3E%3Cellipse cx='166' cy='100' rx='24' ry='8'/%3E%3Crect x='716' y='112' width='6' height='50'/%3E%3Cellipse cx='719' cy='106' rx='34' ry='10'/%3E%3Cellipse cx='736' cy='96' rx='18' ry='6'/%3E%3Crect x='1040' y='128' width='5' height='36'/%3E%3Ccircle cx='1042' cy='120' r='14'/%3E%3C/g%3E%3Cpath d='M0 172Q300 160 600 174T1200 168V200H0z' fill='%23140f22'/%3E%3C/svg%3E");
-}
-:root[data-style="capedusk"] body { font-size: 15px; background: var(--impasto),
-  var(--treeline) left bottom / 100% 200px no-repeat,
-  radial-gradient(ellipse 40% 16% at 70% 86%, rgba(246,190,110,.55), transparent 70%),
-  linear-gradient(180deg, #17122a 0%, #2b2048 38%, #5a3558 64%, #b0605a 80%, #e39b55 90%, #3a2a48 100%); background-attachment: fixed; }
-:root[data-style="capedusk"] h1 { font-size: 2.6rem; font-weight: 700; letter-spacing: .01em; color: #f9e7cf; text-shadow: 0 0 22px rgba(233,161,79,.55), 0 2px 0 #140f22; }
-:root[data-style="capedusk"] h1 span { color: var(--amber); font-style: italic; }
-:root[data-style="capedusk"] h2 { font-size: 1.5rem; font-weight: 700; }
-:root[data-style="capedusk"] h2::before { border-radius: 50%; background: radial-gradient(circle at 40% 40%, #ffe2a8, var(--c) 60%); box-shadow: 0 0 10px var(--c); }
-:root[data-style="capedusk"] .board > section { background: color-mix(in srgb, #140f22 55%, transparent); border: 0; border-radius: 6px 6px 22px 22px; border-top: 3px solid color-mix(in srgb, var(--c) 70%, transparent); box-shadow: 0 18px 40px -24px #000; }
-:root[data-style="capedusk"] .card { background: var(--impasto), linear-gradient(170deg, #33284c, var(--surface) 70%); border: 0; border-radius: 3px 10px 4px 12px; box-shadow: inset 0 3px 0 -1px color-mix(in srgb, var(--c) 75%, transparent), 0 0 0 1px rgba(141,120,156,.45), 0 10px 18px -10px #000; }
-:root[data-style="capedusk"] .card:hover { box-shadow: inset 0 3px 0 -1px var(--c), 0 0 0 1px color-mix(in srgb, var(--amber) 60%, transparent), 0 12px 26px -10px rgba(233,161,79,.45); }
-:root[data-style="capedusk"] .card a, :root[data-style="capedusk"] #sheet a { color: #f8cf8e; }
-:root[data-style="capedusk"] #sheet { border: 0; border-radius: 8px 8px 26px 26px; background: var(--impasto), linear-gradient(180deg, #2f2546, var(--surface) 40%); box-shadow: inset 0 8px 0 -2px color-mix(in srgb, var(--c) 80%, transparent), 0 0 0 1px rgba(141,120,156,.5), 0 40px 70px -24px #000; }
-:root[data-style="capedusk"] :is(.more, .linkbtn, .stepbtn, .fchip, #style, #q) { background-color: #241c38; color: var(--fg); border: 1px solid #a48fb0; border-radius: 4px 12px 4px 12px; }
-:root[data-style="capedusk"] .fchip[aria-pressed="true"] { background: var(--amber); color: #1c1730; border-color: var(--amber); }
-:root[data-style="capedusk"] :is(.tab, .qopt, .dec button, .dec input, .say, #close, .cardnav button, #colnav button, .film button, .chip, .pill, .agents, .callout, .stagebox, .step, .email, .run, .noev) { border-radius: 4px 10px 4px 10px; }
-:root[data-style="capedusk"] :is(.agents, .callout, .stagebox, .email, .run, .noev, .step.cur) { border: 1px solid rgba(164,143,176,.55); box-shadow: 0 8px 18px -12px #000; }
-:root[data-style="capedusk"] .tab { font-family: var(--display); font-size: 1.15rem; font-weight: 700; }
-:root[data-style="capedusk"] .tab[aria-selected="true"] { background: color-mix(in srgb, var(--amber) 16%, var(--surface)); border-bottom: 3px solid var(--amber); }
-:root[data-style="capedusk"] :is(.ev, .todo, #sheet > header) { background: var(--impasto), #261e3a; }
-:root[data-style="capedusk"] .sec > h3, :root[data-style="capedusk"] .ev .label { font-family: var(--display); font-size: 1.2rem; text-transform: none; letter-spacing: 0; }
-:root[data-style="capedusk"] #colnav button[aria-current="true"] { box-shadow: 0 0 0 2px var(--amber), 0 4px 14px -4px rgba(233,161,79,.7); }
-:root[data-style="capedusk"] .chip.tag { color: hsl(var(--h) 70% 82%); border-color: hsl(var(--h) 45% 65%); background: rgba(0,0,0,.25); }
-:root[data-style="capedusk"] #zoom { background: var(--treeline) left bottom / 100% 200px no-repeat, linear-gradient(180deg, #120d20, #3a2848 70%, #8a4d50); }
-:root[data-style="capedusk"] #zoom .stage img { border-radius: 4px 14px 4px 14px; box-shadow: 0 0 0 6px #2a2240, 0 0 50px 6px rgba(233,161,79,.4); }
 /* Shared: the Test tab's actions stay loud in every art style */
 :root[data-style] .stepbtn.p, :root[data-style] .stepbtn.f, :root[data-style] .linkbtn.login, :root[data-style] .linkbtn.stack { font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { :root[data-style] .card { transform: none !important; } }
@@ -1016,7 +894,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 
 <div class="wrap">
   <header>
-    <h1>Acme <span>Kanban Board</span></h1>
+    <h1>Helm<span>board</span></h1>
     <span id="stamp">Loading cards…</span>
     <span id="note" hidden></span>
     <label id="stylebox" for="style">Style
@@ -1029,13 +907,10 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
         <option value="riso">Risograph</option>
         <optgroup label="After the graffiti greats">
           <option value="wildstyle">Subway wildstyle</option>
-          <option value="chrome">Chrome glitch</option>
           <option value="radiant">Radiant line figures</option>
         </optgroup>
         <optgroup label="After the artists">
-          <option value="monet">Monet (impressionist)</option>
           <option value="stencil">Street stencil</option>
-          <option value="capedusk">Cape dusk (after David Griessel)</option>
         </optgroup>
       </select>
     </label>
@@ -1140,28 +1015,6 @@ const ART = (() => {
       "</g>", defs); }
 
 
-  // #1037 Monet: the shape is built from dabs of broken colour, clipped to the #1034 silhouette, over a hazy water-lily pond.
-  const rng = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
-  const seedOf = name => [...name].reduce((a, c) => a * 31 + c.charCodeAt(0) | 0, 7) >>> 0 || 1;
-  function monet(name) { const { fills, lines } = parse(name), i = ++uid, r = rng(seedOf(name) % 2147483646 + 1);
-    const pal = ["currentColor", "currentColor", "#c9b6e4", "#a9c4a0", "#f2b8c6", "#9cc3dd", "#f6e3a1", "#fbf8f3"];
-    let dabs = ""; for (let n = 0; n < 110; n++) { const x = r() * 24, y = r() * 24, a = (r() * 70 - 35).toFixed(0), c = pal[(r() * pal.length) | 0];
-      dabs += `<ellipse cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="${(.7 + r() * .9).toFixed(2)}" ry="${(.35 + r() * .4).toFixed(2)}" transform="rotate(${a} ${x.toFixed(2)} ${y.toFixed(2)})" fill="${c}" opacity="${(.55 + r() * .45).toFixed(2)}"/>`; }
-    let pond = ""; for (let n = 0; n < 16; n++) { const y = 30 + r() * 15, x = 4 + r() * 34, w = 3 + r() * 6, c = ["#9cc3dd", "#a9c4a0", "#c9b6e4", "#f2b8c6"][n % 4];
-      pond += `<path d="M${x.toFixed(1)} ${y.toFixed(1)}h${w.toFixed(1)}" stroke="${c}" stroke-width="${(1 + r() * 1.2).toFixed(1)}" stroke-linecap="round" opacity=".75"/>`; }
-    const defs = `<filter id="hz${i}" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="2" seed="${i % 13}"/><feDisplacementMap in="SourceGraphic" scale="1.4"/><feGaussianBlur stdDeviation=".18"/></filter>` +
-      `<filter id="gl${i}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>` +
-      `<radialGradient id="po${i}" cx=".5" cy=".62" r=".55"><stop offset="0" stop-color="#9cc3dd" stop-opacity=".55"/><stop offset=".7" stop-color="#c9b6e4" stop-opacity=".25"/><stop offset="1" stop-color="#c9b6e4" stop-opacity="0"/></radialGradient>` +
-      `<clipPath id="cl${i}">${fills}</clipPath>`;
-    return S(
-      `<ellipse cx="24" cy="30" rx="23" ry="17" fill="url(#po${i})"/><g filter="url(#hz${i})">${pond}</g>` +
-      '<g opacity=".8"><ellipse cx="8" cy="40" rx="4.2" ry="1.7" fill="#7fa477"/><circle cx="8.6" cy="39.4" r="1" fill="#f2b8c6"/><ellipse cx="40" cy="43" rx="3.4" ry="1.3" fill="#8fb486"/></g>' +
-      G(`<g fill="currentColor" opacity=".45" filter="url(#gl${i})">${fills}</g>`) +
-      G(`<g clip-path="url(#cl${i})" filter="url(#hz${i})">${dabs}</g>`) +
-      G(`<g fill="none" stroke="var(--fg)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 .45 2.2 .35 3.4 .5" opacity=".8" filter="url(#hz${i})">${lines}</g>`) +
-      G(`<g fill="none" stroke="currentColor" stroke-width=".6" stroke-linecap="round" stroke-dasharray="3 2.4" transform="translate(.35 .3)" opacity=".75">${lines}</g>`) +
-      '<g fill="#f6e3a1" opacity=".9"><circle cx="39" cy="7" r="1.3"/><circle cx="41.5" cy="9.5" r=".7"/><circle cx="37" cy="10" r=".5"/></g>', defs); }
-
   // #1037 Street stencil: one solid cut silhouette with stencil bridges, overspray, drips and a single red spot. Original marks only.
   const TAG = { "Backlog": "Later", "Blocked": "Nope", "Planning": "Plot", "Plan review": "Hmm?", "In progress": "Busy", "Human test": "Try me",
     "Ship it": "Go!", "Deploy complete": "Live", "Final action needed": "Send", "Email customer": "Send", "Done": "Done" };
@@ -1210,22 +1063,6 @@ const ART = (() => {
       '<path d="M2 45c6 0 10-3 12-8" fill="none" stroke="#0b0614" stroke-width="3.6" stroke-linecap="round"/><path d="M2 45c6 0 10-3 12-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 35.5 16.5 33l-.4 6.4z" fill="currentColor" stroke="#0b0614" stroke-width="1.1" stroke-linejoin="round"/>' +
       '<path class="g42-tw" d="M42 1l1.3 3.7L47 6l-3.7 1.3L42 11l-1.3-3.7L37 6l3.7-1.3z" fill="#fff" stroke="#0b0614" stroke-width=".5"/>', defs); }
 
-  // Chrome glitch: halftone disc in the column colour, RGB-split ghosts, polished chrome body sliced into shifted bands, scan bar.
-  function chrome(name) { const g = gly(name), i = ++uid, P = (a) => `<path d="${g.f}" ${a}/>`, shift = [0, 2.4, -1.6, 0, 3.2, -2.2];
-    let clips = "", bands = "";
-    shift.forEach((dx, b) => { clips += `<clipPath id="cs${i}_${b}"><rect x="-4" y="${b * 8}" width="56" height="8"/></clipPath>`;
-      bands += `<g clip-path="url(#cs${i}_${b})"><g transform="translate(${dx} 0)"${b === 4 ? ' class="g42-gl"' : ""}>` + P(`fill="url(#cc${i})"`) + P(`fill="url(#ci${i})" opacity=".5"`) +
-        (g.d ? `<path d="${g.d}" fill="#06060b"/>` : "") + P('fill="none" stroke="#06060b" stroke-width="1.3" stroke-linejoin="round"') + "</g></g>"; });
-    const defs = `<linearGradient id="cc${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".36" stop-color="#c4cfdf"/><stop offset=".5" stop-color="#3a4660"/><stop offset=".56" stop-color="#dfe7f5"/><stop offset=".82" stop-color="#8f9bb1"/><stop offset="1" stop-color="#f4f7ff"/></linearGradient>` +
-      `<linearGradient id="ci${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2bd6"/><stop offset=".35" stop-color="#ffe600"/><stop offset=".65" stop-color="#00f0ff"/><stop offset="1" stop-color="#7a5cff"/></linearGradient>` +
-      `<pattern id="ch${i}" width="2.6" height="2.6" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="1.3" r=".75" fill="currentColor"/></pattern>` +
-      `<radialGradient id="cf${i}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><mask id="cm${i}"><circle cx="24" cy="24" r="23" fill="url(#cf${i})"/></mask>` + clips;
-    return S(
-      `<rect x="1" y="1" width="46" height="46" fill="url(#ch${i})" mask="url(#cm${i})"/>` +
-      P('fill="#ff2bd6" opacity=".9" transform="translate(-2 .5)"') + P('fill="#00f0ff" opacity=".9" transform="translate(2 -.5)"') +
-      bands +
-      '<rect x="0" y="30.5" width="48" height="1.6" fill="currentColor"/><rect x="38" y="40" width="3" height="3" fill="#ff2bd6"/><rect x="42" y="40" width="3" height="3" fill="#00f0ff"/><rect x="42" y="36" width="3" height="3" fill="currentColor"/>', defs); }
-
   // Radiant line figures: a new figure per column doing the column's job, thick ink outline, flat colour, radiating motion marks.
   const POSE = {
     "Backlog": { h: [17, 9], b: "M17 15v14M17 29l-6 13M17 29l6 13M17 19l11 3M17 19l-7 6", pf: "M28 15h14v14H28z", m: "M28 22h14M44 9l2-2M44 4h3" },
@@ -1251,28 +1088,7 @@ const ART = (() => {
       st(p.b, "currentColor", 5.2) + `<circle cx="${hx}" cy="${hy}" r="4.8" fill="currentColor"/>` +
       (p.pf ? `<g opacity=".9">${st(p.m && name === "Blocked" ? p.m.split("M8")[0] : "", ink, 1.6)}</g>` : ""), ""); }
 
-  // #1043 Cape dusk: the shape is laid in thick, directional strokes of warm paint, standing in a twilight landscape (amber horizon, layered ridges, one silhouetted tree). Original marks only.
-  function capedusk(name) { const { fills, lines } = parse(name), i = ++uid, r = rng(seedOf(name) % 2147483646 + 7), tf = "translate(6 2) scale(1.5)";
-    const pal = ["currentColor", "currentColor", "currentColor", "#f4c57e", "#e9a14f", "#f6a693", "#f7ede0"];
-    let strokes = ""; for (let n = 0; n < 70; n++) { const x = r() * 24, y = r() * 24, a = (r() * 40 - 60).toFixed(0), l = 1.6 + r() * 2.4, c = pal[(r() * pal.length) | 0];
-      strokes += `<path d="M${(x - l / 2).toFixed(2)} ${y.toFixed(2)}h${l.toFixed(2)}" transform="rotate(${a} ${x.toFixed(2)} ${y.toFixed(2)})" stroke="${c}" stroke-width="${(.7 + r() * .7).toFixed(2)}" stroke-linecap="round" opacity="${(.7 + r() * .3).toFixed(2)}"/>`; }
-    const tx = name.length % 2 ? 7 : 41;
-    const defs = `<linearGradient id="sk${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#241a3c"/><stop offset=".5" stop-color="#5a3558"/><stop offset=".78" stop-color="#c8704f"/><stop offset=".9" stop-color="#f0ad5c"/></linearGradient>` +
-      `<filter id="im${i}" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9 .25" numOctaves="2" seed="${i % 19}"/><feDisplacementMap in="SourceGraphic" scale="1.1"/></filter>` +
-      `<filter id="sh${i}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.4"/></filter>` +
-      `<clipPath id="ca${i}"><rect x="1" y="1" width="46" height="46" rx="9"/></clipPath><clipPath id="cs${i}">${fills}</clipPath>`;
-    return S(
-      `<g clip-path="url(#ca${i})"><rect width="48" height="48" fill="url(#sk${i})"/>` +
-      `<circle cx="${48 - tx}" cy="35" r="5" fill="#ffd38a" opacity=".85" filter="url(#sh${i})"/>` +
-      `<g filter="url(#im${i})"><path d="M0 37Q12 33 24 36T48 34V48H0z" fill="#3a2a48"/><path d="M0 42Q16 39 30 42T48 41V48H0z" fill="#1d1530"/>` +
-      `<g fill="#140f22"><rect x="${tx - .6}" y="31" width="1.2" height="10"/><ellipse cx="${tx}" cy="30.5" rx="6.5" ry="2"/><ellipse cx="${tx - 1.6}" cy="28.6" rx="3.4" ry="1.2"/></g></g>` +
-      '<g fill="#f7ede0" opacity=".8"><circle cx="9" cy="6" r=".5"/><circle cx="38" cy="5" r=".4"/><circle cx="27" cy="9" r=".35"/></g></g>' +
-      G(`<g fill="#140f22" opacity=".6" filter="url(#sh${i})" transform="translate(.5 .8)">${fills}</g>`, tf) +
-      G(`<g clip-path="url(#cs${i})" filter="url(#im${i})"><rect width="24" height="24" fill="currentColor" opacity=".55"/>${strokes}</g>`, tf) +
-      G(`<g fill="none" stroke="#140f22" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#im${i})">${fills}${lines}</g>`, tf) +
-      G(`<g fill="none" stroke="#ffd38a" stroke-width=".5" stroke-linecap="round" opacity=".85" transform="translate(-.3 -.35)">${lines}</g>`, tf), defs); }
-
-  const R = { sketch, graffiti, blueprint, comic, riso, monet, stencil, wildstyle, chrome, radiant, capedusk };
+  const R = { sketch, graffiti, blueprint, comic, riso, stencil, wildstyle, radiant };
   return { svg: (style, name) => R[style] ? R[style](name) : null, styles: Object.keys(R) };
 })();
 const iconSvg = name => ART.svg(document.documentElement.dataset.style, name) || '<svg viewBox="0 0 24 24" width="20" height="20">' + (ICONS[name] || "") + "</svg>";
@@ -1342,8 +1158,10 @@ function card(c) {
     meta.append(a);
   }
   if (c.repo) meta.append(el("span", "", String(c.repo).split("/").pop()));
+  const runOn = [c.model, c.effort].filter(v => typeof v === "string" && v.trim()).map(v => v.trim().slice(0, 40)).join(" · ");
+  if (runOn) { const m = el("span", "chip run-on", runOn); m.title = "Model and effort this card's session runs on"; meta.append(m); }
   d.append(top, meta);
-  if (c.column === "Blocked" && c.stuck) d.append(el("div", "why", c.stuck.length > 90 ? c.stuck.slice(0, 90) + "…" : c.stuck));
+  if (c.column === "Blocked" && c.stuck) { const s = String(c.stuck); d.append(bulleted("why", s.length > 90 ? s.slice(0, 90) + "…" : s)); }
   if (WEAK.has(c.id)) d.append(el("div", "why", "Matched in its status or next step"));
   if (PENDING[c.id]) { d.classList.add("asked"); d.append(el("div", "why", "Asked the Router…")); }
   else {
@@ -1493,7 +1311,20 @@ function sec(parent, title, note) {
   if (note) h.append(el("small", "", note));
   s.append(h); parent.append(s); return s;
 }
-function prose(parent, text) { const p = el("p", "prose", text); parent.append(p); return p; }
+// Card text as written: newlines kept, lines starting "- ", "* " or "• " become a real bulleted list. Text only, never HTML.
+function bulleted(cls, text) {
+  const box = el("div", cls); let ul = null, para = null;
+  String(text == null ? "" : text).replace(/\r/g, "").split("\n").forEach(line => {
+    const m = line.match(/^\s*[-*•]\s+(.*)$/);
+    if (m) { para = null; if (!ul) { ul = el("ul"); box.append(ul); } ul.append(el("li", "", m[1])); return; }
+    ul = null;
+    if (!para) { if (!line.trim()) return; para = el("p", "", line); box.append(para); }
+    else para.textContent += "\n" + line;
+  });
+  box.querySelectorAll("p").forEach(q => { q.textContent = q.textContent.replace(/\n+$/, ""); });
+  return box;
+}
+function prose(parent, text) { const p = bulleted("prose", text); parent.append(p); return p; }
 const when = t => String(t || "").slice(0, 16).replace("T", " ");
 
 /* parser:start */
@@ -1759,8 +1590,8 @@ function drawTest(pane) {
     v.saveEl = el("div", "hint", v.saveMsg || ""); v.saveEl.setAttribute("role", "status"); s0.append(v.saveEl);
     if (T.traps || T.brokenIf) {
       const notes = el("div", "notes");
-      if (T.traps) { const n = el("div", "note trap"); n.append(el("b", "", "Traps"), document.createTextNode(T.traps)); notes.append(n); }
-      if (T.brokenIf) { const n = el("div", "note broken"); n.append(el("b", "", "Broken if"), document.createTextNode(T.brokenIf)); notes.append(n); }
+      if (T.traps) { const n = el("div", "note trap"); n.append(el("b", "", "Traps"), bulleted("nt", T.traps)); notes.append(n); }
+      if (T.brokenIf) { const n = el("div", "note broken"); n.append(el("b", "", "Broken if"), bulleted("nt", T.brokenIf)); notes.append(n); }
       todo.append(notes);
     }
     if (shotsOf(v.f).some(p => p.url)) checksBlock(todo, v.f, true);
@@ -1967,7 +1798,7 @@ function drawQuestion() {
   }
   const q = qs[0], ctl = questionControls(v, q, 0);
   if (q.askedAt) head.append(el("span", "hint", "asked " + when(q.askedAt)));
-  box.append(head, el("p", "qtext", q.text));
+  box.append(head, bulleted("qtext", q.text));
   if (ctl.answered) box.append(ctl.ansEl);
   if (ctl.opts.children.length) box.append(ctl.opts);
   box.append(ctl.row, ctl.said);
@@ -2155,11 +1986,11 @@ const WIDGETS = {
       fold(F.title, F.note, inn => {
         if (arr(F.items).length) { const ol = el("ol"); F.items.forEach(t => ol.append(marked(el("li"), t))); inn.append(ol); }
         if (arr(F.pairs).length) { const dl = el("dl", "kv"); F.pairs.forEach(pr => { if (arr(pr).length) dl.append(el("dt", "", String(pr[0])), marked(el("dd"), pr[1])); }); inn.append(dl); }
-        if (F.text) inn.append(el("p", "prose", String(F.text)));
+        if (F.text) inn.append(bulleted("prose", String(F.text)));
         if (F.markdown) inn.append(mdRender(F.markdown));
       });
     });
-    if (sum) fold(rich ? "Full plan text" : "What this card is", rich ? "as written on the card" : "", inn => inn.append(el("p", "prose", sum)), !rich);
+    if (sum) fold(rich ? "Full plan text" : "What this card is", rich ? "as written on the card" : "", inn => inn.append(bulleted("prose", sum)), !rich);
     if (folds.children.length) sec(p, w.title || (rich ? "Detail" : "The card's own words")).append(folds);
   },
   // ---- New kinds ----
@@ -2773,11 +2604,10 @@ window.claude.use("comments").then(c => { CM = c; });
 /* #1035 Style switch */
 (function () {
   const STYLES = { standard: "", sketch: "Caveat:wght@500;700&family=Patrick+Hand", graffiti: "Permanent+Marker&family=Rubik+Wet+Paint&family=Rubik:wght@400;600;700",
-    wildstyle: "Lilita+One&family=Rubik:wght@400;600;700", chrome: "Rubik+Glitch&family=Space+Grotesk:wght@400;500;600;700", radiant: "Chewy&family=Nunito:wght@400;600;700;800",
+    wildstyle: "Lilita+One&family=Rubik:wght@400;600;700", radiant: "Chewy&family=Nunito:wght@400;600;700;800",
     blueprint: "Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;600",
     comic: "Titan+One&family=Comic+Neue:wght@400;700", riso: "Archivo+Black&family=Space+Mono:wght@400;700",
-    monet: "Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Mulish:wght@400;600;700", stencil: "Stardos+Stencil:wght@400;700&family=Special+Elite",
-    capedusk: "Cormorant:ital,wght@0,600;0,700;1,700&family=Lora:wght@400;600;700" };
+    stencil: "Stardos+Stencil:wght@400;700&family=Special+Elite" };
   const sel = $("style"), loaded = {};
   function apply(name) {
     if (!(name in STYLES)) name = "standard";
