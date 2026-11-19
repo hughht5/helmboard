@@ -8,6 +8,12 @@
   <img alt="Platforms: macOS | Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-lightgrey.svg">
 </p>
 
+**To install, copy this into Claude Code:**
+
+```
+Install https://github.com/hughht5/helmboard
+```
+
 <p align="center">
   <a href="docs/desktop-app.png"><img src="docs/desktop-app.png" alt="The Claude desktop app with the Router's sessions, the Router chat and the board side by side" width="900"></a><br>
   <sub>The Router's sessions, its chat and the board, side by side in the Claude desktop app.</sub>
