@@ -197,6 +197,10 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 /* A tall header (long title, several Final actions) scrolls inside itself instead of pushing the tabs, pane and decision bar off the panel. */
 #sheet > header { flex: 0 1 auto; min-height: 0; max-height: 55%; overflow-y: auto; overscroll-behavior: contain; }
 #sheet > header > * { flex-shrink: 0; }
+.email .explain { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); padding: 8px 12px; font-size: .9rem; line-height: 1.5; min-width: 0; overflow-wrap: anywhere; }
+.email .explain .xh { font-size: .8rem; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+.email .explain .nt ul { margin: 0; padding-left: 1.2em; }
+.email .explain .nt li { margin: .1em 0; }
 #sheet > header .tabs { position: sticky; bottom: 0; z-index: 1; background: var(--surface); }
 #sheet > .qbox { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; overscroll-behavior: contain; }
 #sheet .pane { min-height: 120px; }
@@ -1269,6 +1273,12 @@ function copyRow(box, label, val, cls) {
   b.addEventListener("click", () => copyText(val, v, b));
   row.append(el("span", "ek", label), v, b); box.append(row);
 }
+// "What this code does": the action's `explain` ("- " lines, or a list), shown above its command box. Text only.
+function explainBlock(box, explain) {
+  const text = Array.isArray(explain) ? explain.map(x => "- " + sstr(x).replace(/^\s*[-*•]\s+/, "")).join("\n") : sstr(explain);
+  if (!text.trim()) return;
+  const x = el("div", "explain"); x.append(el("div", "xh", "What this code does"), bulleted("nt", text)); box.append(x);
+}
 function actionsBlock(c) {
   const wrap = el("div", "finals"), acts = actionsOf(c), num = "#" + (c.n ?? c.id);
   if (!acts.length) { const box = el("div", "email"); box.append(el("h3", "", "Final step"), el("div", "enone", "Steps coming from the Router")); wrap.append(box); return wrap; }
@@ -1283,6 +1293,7 @@ function actionsBlock(c) {
       else { copyRow(box, "To", sstr(e.to)); copyRow(box, "Subject", sstr(e.subject)); copyRow(box, "Body", sstr(e.body), " body"); }
       box.append(el("div", "enote", "The owner sends this himself. To have the Router send it, tell the Router in chat."));
     } else if (a.kind === "prod") {
+      explainBlock(box, a.explain);
       (Array.isArray(a.commands) ? a.commands : a.commands ? [a.commands] : []).forEach((cmd, i, l) => copyRow(box, l.length > 1 ? "Run " + (i + 1) : "Run", sstr(cmd), " cmd"));
       if (a.expect || a.see) { box.append(el("div", "ek", "What you should see")); box.append(el("div", "emv", sstr(a.expect || a.see))); }
     } else if (a.kind === "switch") {
