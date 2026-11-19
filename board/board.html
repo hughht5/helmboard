@@ -737,6 +737,31 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 :root[data-style="comic"] #zoom { background: #fff6d6 radial-gradient(circle, rgba(220,40,60,.2) 1.6px, transparent 2px) 0 0 / 10px 10px; color: #111; }
 :root[data-style="comic"] #zoom .stage img { border: 5px solid #111; box-shadow: 10px 10px 0 #111; }
 
+/* Comic book (dark), the owner 19 Nov 2026: every Comic book rule, then this layer: deep navy page with faint light halftone,
+   dark panels with light ink outlines, bright accents. Yellow header strips and the yellow wordmark keep black ink. */
+:root[data-style="comic"][data-tone="dark"] {
+  --bg: #0b0f22; --surface: #182040; --fg: #f6f2e7; --muted: #c3c8dc; --line: #f6f2e7; --ink: #f6f2e7;
+  --plan: #c9a2ff; --test: #ffb547; --stuck: #ff6b70; --run: #6cbcff; --ship: #57e394; --mail: #46e3da; --done: #b4bad0; color-scheme: dark;
+}
+:root[data-style="comic"][data-tone="dark"] body { background: radial-gradient(circle, rgba(255,255,255,.07) 1.6px, transparent 2px) 0 0 / 10px 10px, var(--bg); }
+:root[data-style="comic"][data-tone="dark"] .board > section { background: radial-gradient(circle, rgba(255,255,255,.06) 1.25px, transparent 1.7px) 0 0 / 8px 8px, var(--surface); border-color: var(--ink); box-shadow: 6px 6px 0 #000; }
+:root[data-style="comic"][data-tone="dark"] .board > section > h2 { color: #111; border-bottom-color: var(--ink); }
+:root[data-style="comic"][data-tone="dark"] .board > section > h2 .count { color: #111; }
+:root[data-style="comic"][data-tone="dark"] .card { background: #222b52; border-color: var(--ink); border-left-color: var(--c); box-shadow: 3px 3px 0 #000; }
+:root[data-style="comic"][data-tone="dark"] .card .issue, :root[data-style="comic"][data-tone="dark"] #sheet a { color: var(--run); }
+:root[data-style="comic"][data-tone="dark"] #sheet { border-color: var(--ink); border-top-color: var(--c); box-shadow: 12px 12px 0 #000; }
+:root[data-style="comic"][data-tone="dark"] :is(.more, .linkbtn, .stepbtn, .fchip, #style, #q) { border-color: var(--ink); box-shadow: 2px 2px 0 #000; background-color: var(--surface); color: var(--fg); }
+:root[data-style="comic"][data-tone="dark"] .fchip[aria-pressed="true"] { background: #ffd400; color: #111; border-color: #ffd400; }
+:root[data-style="comic"][data-tone="dark"] #colnav button { border-color: var(--ink); }
+:root[data-style="comic"][data-tone="dark"] :is(.tab, .qopt, .dec button, .dec input, .say, #close, .cardnav button, .film button, .agents, .callout, .stagebox, .step.cur, .email, .run, .noev) { border-color: var(--ink); box-shadow: 3px 3px 0 #000; }
+:root[data-style="comic"][data-tone="dark"] .tab[aria-selected="true"] { background: #ffd400; color: #111; border-bottom-color: var(--ink); }
+:root[data-style="comic"][data-tone="dark"] :is(.ev, .todo) { background: radial-gradient(circle, rgba(108,188,255,.10) 1.4px, transparent 1.8px) 0 0 / 9px 9px, var(--surface); }
+:root[data-style="comic"][data-tone="dark"] #sheet .chip, :root[data-style="comic"][data-tone="dark"] .pill { border-color: var(--ink); }
+:root[data-style="comic"][data-tone="dark"] .dec button.go { color: #0b0f22; }
+:root[data-style="comic"][data-tone="dark"] .chip.tag { color: hsl(var(--h) 75% 82%); border-color: hsl(var(--h) 55% 68%); background: rgba(0,0,0,.25); }
+:root[data-style="comic"][data-tone="dark"] #zoom { background: #0b0f22 radial-gradient(circle, rgba(255,255,255,.08) 1.6px, transparent 2px) 0 0 / 10px 10px; color: var(--fg); }
+:root[data-style="comic"][data-tone="dark"] #zoom .stage img { border-color: var(--ink); box-shadow: 10px 10px 0 #000; }
+
 /* Risograph */
 :root[data-style="riso"] :is(.tab, .qopt, .dec button, .dec input, .say, #close, .cardnav button, #colnav button, .film button, .chip, .pill, .agents, .callout, .stagebox, .step, .email, .run, .noev) { border-radius: 0; }
 :root[data-style="riso"] :is(.qopt, .dec button, #close, .cardnav button, .agents, .callout, .stagebox, .email, .run, .noev, .step.cur) { border: 2px solid var(--line); box-shadow: 4px 3px 0 rgba(255,72,140,.5); }
@@ -927,6 +952,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
         </optgroup>
         <optgroup label="Print">
           <option value="comic">Comic book</option>
+          <option value="comicdark">Comic book (dark)</option>
           <option value="riso">Risograph</option>
         </optgroup>
         <optgroup label="Street">
@@ -2636,14 +2662,18 @@ window.claude.use("comments").then(c => { CM = c; });
   const STYLES = { standard: "", sketch: "Caveat:wght@500;700&family=Patrick+Hand", graffiti: "Permanent+Marker&family=Rubik+Wet+Paint&family=Rubik:wght@400;600;700",
     wildstyle: "Lilita+One&family=Rubik:wght@400;600;700", radiant: "Chewy&family=Nunito:wght@400;600;700;800",
     blueprint: "Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;600",
-    comic: "Titan+One&family=Comic+Neue:wght@400;700", riso: "Archivo+Black&family=Space+Mono:wght@400;700",
+    comic: "Titan+One&family=Comic+Neue:wght@400;700", comicdark: "Titan+One&family=Comic+Neue:wght@400;700", riso: "Archivo+Black&family=Space+Mono:wght@400;700",
     stencil: "Stardos+Stencil:wght@400;700&family=Special+Elite" };
+  const TONES = { comicdark: ["comic", "dark"] };
   const sel = $("style"), loaded = {};
   function apply(name) {
     if (!(name in STYLES)) name = "standard";
     if (STYLES[name] && !loaded[name]) { loaded[name] = 1; const l = document.createElement("link"); l.rel = "stylesheet";
       l.href = "https://fonts.googleapis.com/css2?family=" + STYLES[name] + "&display=swap"; document.head.append(l); }
-    if (name === "standard") document.documentElement.removeAttribute("data-style"); else document.documentElement.setAttribute("data-style", name);
+    // A tone variant reuses its base style's rules and icons: "comicdark" is Comic book plus data-tone="dark".
+    const [base, tone] = TONES[name] || [name, ""], root = document.documentElement;
+    if (base === "standard") root.removeAttribute("data-style"); else root.setAttribute("data-style", base);
+    if (tone) root.setAttribute("data-tone", tone); else root.removeAttribute("data-tone");
     sel.value = name;
     document.querySelectorAll(".ci[data-n]").forEach(x => { x.innerHTML = iconSvg(x.dataset.n); });
   }
