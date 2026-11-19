@@ -422,3 +422,8 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 - Say nothing about routine checks, housekeeping, version/PR/session ids or test counts; those go on the card.
 - Mention a session's report only when its card changes column for them (ready to test, live, blocked).
 - Research: verdict plus top 3; detail in a file.
+
+## Card text and board style
+- Every text field on a card (status, description, summary, next) is short bullet lines starting "- ", one idea each. Never a block of prose.
+- No ALL CAPS anywhere on the board, in any style.
+- Every card with a session shows its model and effort (`model`, `effort` from get_session); update when they change.
