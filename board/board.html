@@ -201,7 +201,10 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 #inbox > summary::before { content: "▸"; color: var(--muted); font-size: .9rem; }
 #inbox[open] > summary::before { content: "▾"; }
 #inbox > summary:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; border-radius: 8px; }
-.ibadge { font-family: var(--body); font-size: .8rem; font-weight: 700; color: var(--surface); background: var(--test); border-radius: 999px; padding: 1px 9px; font-variant-numeric: tabular-nums; }
+.ibadge { font-family: var(--body); font-size: .8rem; font-weight: 700; color: var(--fg); background: color-mix(in srgb, var(--test) 22%, var(--surface)); border: 1px solid var(--test); border-radius: 999px; padding: 0 9px; font-variant-numeric: tabular-nums; }
+/* Styles whose page text is light but whose panels are cream: the inbox borrows the card sheet's dark-on-cream palette */
+:root[data-style="graffiti"] #inbox { --fg: #17151b; --muted: #4f4a57; --line: #b9b2a5; --bg: #efe9dc; --run: #0b5cad; --test: #8a5200; --ship: #157046; border: 3px solid #111; border-left: 8px solid #ffb703; }
+:root[data-style="wildstyle"] #inbox { --fg: #1a1030; --muted: #4f4263; --line: #b9aecd; --bg: #f1e9dc; --run: #0b5cad; --test: #8a5200; --ship: #157046; border: 3px solid var(--ink); border-left: 8px solid #ffbe0b; }
 .inlist { display: flex; flex-direction: column; gap: 12px; padding: 0 14px 14px; min-width: 0; }
 .iitem { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
 .ihead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: .85rem; color: var(--muted); min-width: 0; }
@@ -2579,8 +2582,76 @@ function render(cards) {
     SHOWN[name] = by[name];
     boxes[name].box.replaceChildren(...(by[name].length ? by[name].map(card) : [el("p", "empty", total[name] ? "No matches." : EMPTY[name] || "Empty.")]));
   }
-  drawChips(cards); navCounts(cards);
+  drawChips(cards); navCounts(cards); drawInbox();
   return shown;
+}
+// Questions for you (#inbox): the Router's own asks (db `asks`, unanswered only) and every card's unanswered question, newest first.
+// Items are kept by key across live updates, so a half-typed answer survives a refresh. Text only, never HTML.
+let ASKS = [];
+const INBOX = new Map(), INBOX_V = {}, ASK_SENT = {};
+function cardByN(n) { return n == null || n === "" ? null : LAST.find(c => String(c.n ?? c.id) === String(n).replace(/^#/, "")) || null; }
+function inboxHead(item, c, n, at) {
+  const h = el("div", "ihead");
+  if (c) { const b = el("button", "icard", "#" + (c.n ?? c.id)); b.type = "button"; b.title = "Open card " + (c.n ?? c.id); b.addEventListener("click", () => openCard(c)); h.append(b, el("span", "ictitle", c.title || "")); }
+  else if (n != null && n !== "") h.append(el("span", "ictitle", "#" + String(n).replace(/^#/, "")));
+  if (at) h.append(el("span", "", "asked " + when(at)));
+  return h;
+}
+function askItem(a) {
+  const item = el("div", "iitem"), c = cardByN(a.card), said = el("div", "said", ASK_SENT[a.id] || ""); said.setAttribute("role", "status");
+  const opts = el("div", "qopts"), row = el("div", "qrow"), text = el("input"), send = el("button", "", "Send answer");
+  text.type = "text"; text.autocomplete = "off"; text.setAttribute("aria-label", "Your answer"); text.placeholder = "Your own answer, or a note to go with an option. Ctrl+Enter sends.";
+  send.type = "button"; const all = [send, text];
+  const go = async what => {
+    const typed = text.value.trim();
+    if (!what && !typed) { said.textContent = "Pick an option or type an answer first."; text.focus(); return; }
+    const msg = "Question " + a.id + ": " + [what ? "answer " + what : "", typed].filter(Boolean).join(" ");
+    all.forEach(x => x.disabled = true);
+    await ask(null, msg, said, item);
+    if (said.textContent.startsWith("Sent")) ASK_SENT[a.id] = said.textContent = "Sent to the Router: “" + msg + "” It stays here until the Router has acted.";
+    else all.forEach(x => x.disabled = false);
+  };
+  arr(a.options).forEach(o => {
+    if (!o || (o.key == null && !o.label)) return;
+    const b = el("button", "qopt"); b.type = "button";
+    const same = o.key != null && o.label && String(o.key).toLowerCase() === String(o.label).toLowerCase();
+    b.append(el("b", "", same ? String(o.label) : [o.key, o.label].filter(x => x != null && x !== "").join(": ")));
+    if (o.detail) b.append(el("span", "", String(o.detail)));
+    b.addEventListener("click", () => go(o.key != null && o.label ? o.key + " (" + o.label + ")" : String(o.key ?? o.label)));
+    opts.append(b); all.push(b);
+  });
+  send.addEventListener("click", () => go(""));
+  text.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go(""); } });
+  row.append(text, send);
+  if (ASK_SENT[a.id]) all.forEach(x => x.disabled = true);
+  item.append(inboxHead(item, c, a.card, a.askedAt), bulleted("qtext", a.text));
+  if (opts.children.length) item.append(opts);
+  item.append(row, said); return item;
+}
+function cardQItem(c, q, i) {
+  const v = INBOX_V[c.id] || (INBOX_V[c.id] = { qSent: {}, qOpen: {} }); v.c = c;
+  const item = el("div", "iitem"), ctl = questionControls(v, q, i);
+  item.append(inboxHead(item, c, null, q.askedAt), bulleted("qtext", q.text));
+  if (ctl.opts.children.length) item.append(ctl.opts);
+  item.append(ctl.row, ctl.said); return item;
+}
+function drawInbox() {
+  const box = $("inbox"), list = $("inlist"); if (!box) return;
+  const entries = [];
+  ASKS.forEach(a => entries.push({ key: "a:" + a.id, at: String(a.askedAt || ""), sig: JSON.stringify([a.text, a.options, a.card, a.askedAt, !!cardByN(a.card)]), make: () => askItem(a) }));
+  LAST.forEach(c => { if (c.column === "Done") return; qList(c).forEach((q, i) => { if (answerFor(c, q, i)) return;
+    entries.push({ key: "q:" + c.id + ":" + qStamp(q), at: String(q.askedAt || c.updatedAt || ""), sig: JSON.stringify([q, c.title, c.n, c.answers]), make: () => cardQItem(c, q, i) }); }); });
+  entries.sort((x, y) => y.at.localeCompare(x.at));
+  const nodes = entries.map(e => { const old = INBOX.get(e.key); if (old && old.sig === e.sig) return old.node; const node = e.make(); INBOX.set(e.key, { sig: e.sig, node }); return node; });
+  const keep = new Set(entries.map(e => e.key)); for (const k of [...INBOX.keys()]) if (!keep.has(k)) INBOX.delete(k);
+  const cur = [...list.children]; if (cur.length !== nodes.length || cur.some((n, i) => n !== nodes[i])) list.replaceChildren(...nodes);
+  $("inboxn").textContent = String(entries.length); $("inboxn").setAttribute("aria-label", entries.length + (entries.length === 1 ? " question" : " questions") + " waiting");
+  box.hidden = !entries.length;
+}
+{
+  const box = $("inbox"); let closed = false; try { closed = localStorage.getItem("boardv2.inbox") === "closed"; } catch (e) {}
+  box.open = !closed;
+  box.addEventListener("toggle", () => { try { localStorage.setItem("boardv2.inbox", box.open ? "open" : "closed"); } catch (e) {} });
 }
 let stampNow = null;
 function repaint() { const shown = render(LAST); if (stampNow && shown >= 0) stampNow(shown, LAST.length); }
@@ -2615,6 +2686,10 @@ function start(db) {
     live = rows(snap); paint();
     if (!snap.metadata.fromCache) { clearTimeout(timer); note.hidden = true; }
   }, e => { clearTimeout(timer); note.hidden = false; note.textContent = "The cards stopped updating (" + (e && e.code || "error") + "). Reopen the page to reconnect."; });
+  // The Router's own questions; answered ones leave the inbox. If they can't be read, the inbox still shows card questions.
+  db.collection("asks").limit(300).onSnapshot(snap => {
+    ASKS = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => a && a.text && a.answered !== true); drawInbox();
+  }, () => { ASKS = []; drawInbox(); });
 }
 render([]);
 window.claude.use("db").then(start);
