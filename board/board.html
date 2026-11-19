@@ -899,6 +899,15 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 @keyframes g42-tw { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 @media (max-width: 600px) { :root[data-style="wildstyle"] h1, :root[data-style="radiant"] h1, :root[data-style="graffiti"] h1 { font-size: 2.15rem; } }
 
+/* Column headers, every style: the count badge stays inside its own header, after the title. The header wraps: the badge moves
+   to the next line when it does not fit, and a word wider than the column breaks rather than spilling into the next column. */
+.board > section > h2 { white-space: normal; flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.board > section > h2 > .ci, .board > section > h2 > .count { flex: none; }
+.board > section > h2 > .ht { flex: 0 1 auto; min-width: 0; overflow-wrap: break-word; }
+/* Phone column strip: every count is a white pill with black figures, readable on any button colour in every style.
+   Columns with a question for the owner keep a purple ring. */
+#colnav button .k { background: #fff !important; color: #111 !important; box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
+#colnav button.q .k { box-shadow: inset 0 0 0 2px var(--plan); }
 /* Shared: the Test tab's actions stay loud in every art style */
 :root[data-style] .stepbtn.p, :root[data-style] .stepbtn.f, :root[data-style] .linkbtn.login, :root[data-style] .linkbtn.stack { font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { :root[data-style] .card { transform: none !important; } }
@@ -2384,7 +2393,7 @@ document.addEventListener("keydown", e => {
 const boxes = {};
 COLS.forEach(([name, tone, sub]) => {
   const sec = el("section", sub && tone !== "ship" && tone !== "done" ? "you" : ""); sec.style.setProperty("--c", "var(--" + tone + ")");
-  const h = el("h2"); h.append(icon(name), document.createTextNode(name + " ")); const n = el("span", "count", "0"); h.append(n); sec.append(h);
+  const h = el("h2"); h.append(icon(name), el("span", "ht", name)); const n = el("span", "count", "0"); h.append(n); sec.append(h);
   if (sub) sec.append(el("div", "sub", sub));
   const msg = el("div", "colmsg"); msg.hidden = true; msg.setAttribute("role", "status"); sec.append(msg);
   const box = el("div", "cards"); sec.append(box); $("board").append(sec); boxes[name] = { box, n, sec, msg };
