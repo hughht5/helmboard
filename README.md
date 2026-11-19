@@ -12,12 +12,14 @@ time through a per-repo merge lane. A private claude.ai artifact is the board yo
 click. It exists because running five or ten agent sessions by hand means losing track of
 which is stuck, which drifted, and which two are about to merge over each other.
 
-## What you need first
+## Requirements
 
-- The **Claude Code desktop app** (the Router uses its session tools to start, watch and open
+Works on macOS and Windows.
+
+- The **Claude desktop app** with Claude Code (the Router uses its session tools to start, watch and open
   sessions, and its Artifact tools for the board).
 - A **claude.ai account** that can publish artifacts, for the board page.
-- `git`, the `gh` CLI signed in to GitHub, and Node.js (for the hooks).
+- **Node.js** (runs the hooks), **git**, and the **`gh` CLI** signed in to GitHub (`gh auth status`).
 
 ## Quick start (2 minutes)
 
@@ -79,7 +81,7 @@ Example `settings.json` snippet (the whole of `settings.example.json`, one event
 }
 ```
 
-On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
+On macOS `$HOME` works as written. On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
 (`C:/Users/<you>/.claude/hooks/router/...`). The hooks find your home folder through Node
 (`USERPROFILE` on Windows), not `$HOME`, so to keep the board anywhere other than
 `~/router-board` set `ROUTER_DIR` (and `ROUTER_SKILL` for the skill) in your environment.
