@@ -428,3 +428,8 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 - Every text field on a card (status, description, summary, next) is short bullet lines starting "- ", one idea each. Never a block of prose.
 - No ALL CAPS anywhere on the board, in any style.
 - Every card with a session shows its model and effort (`model`, `effort` from get_session); update when they change.
+
+## Questions for the user
+- Every question you need the user to answer goes on the board, never only in chat: on its card (`question`) if it's about a card, else as a doc in the `asks` collection ({id, text, options, card?, askedAt, answered:false}). The board shows all of them in its "Questions for you" inbox.
+- In chat, say at most one line: "Question on the board: <short>."
+- When answered (a board comment or chat), act on it and set `answered: true` with the `answer`.
