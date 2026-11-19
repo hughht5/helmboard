@@ -181,6 +181,8 @@ the queue is `lane/<repo>-queue.md`.
   repo with open cards, if its lane session isn't alive (brief: read the rules and the queue,
   follow them). Don't wait for the first ship. If the app refuses the start (a turn the user
   didn't type), say in one line: "Say go to start the merge lane for <repo>."
+- Once a lane starts, suggest watching it beside this chat, in one line: "Want the merge lane in a
+  split window?" On a yes, open it with `mcp__ccd_window__open_session_in` (split view). Ask once per lane.
 - The lane tells you each state change. On `merged`, tell every other open card in that
   repo to rebase when it next reaches a clean point. On `live`, move the card to Deploy
   complete. On `held`, move it to Blocked with the lane's reason as a question for the owner.
