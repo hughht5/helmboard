@@ -8,8 +8,10 @@
   <img alt="Platforms: macOS | Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-lightgrey.svg">
 </p>
 
-<!-- TODO: add docs/screenshot.png (a board screenshot) -->
-<!-- <p align="center"><img src="docs/screenshot.png" alt="The Helmboard board" width="800"></p> -->
+<p align="center">
+  <a href="docs/board.png"><img src="docs/board.png" alt="The Helmboard board: columns from Backlog to Human test, with cards waiting on a question, a test or a ship" width="900"></a><br>
+  <sub>Every task is a card. The board shows which ones need you.</sub>
+</p>
 
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
 
@@ -58,6 +60,35 @@ Run these one at a time:
 | **Merge lanes**<br>Approved cards ship one at a time per repo, so parallel work never collides. | **Many repos, one board**<br>One Router runs cards across all your repos, with a lane for each. |
 
 Why: running five or ten agent sessions by hand means losing track of which is stuck, which drifted, and which two are about to merge over each other.
+
+## See it in the app
+
+<p align="center">
+  <a href="docs/desktop-app.png"><img src="docs/desktop-app.png" alt="The Claude desktop app with the Router's sessions, the Router chat and the board side by side" width="900"></a><br>
+  <sub>The Router's sessions, its chat and the board, side by side in the Claude desktop app.</sub>
+</p>
+
+## Pick a style
+
+<p align="center">
+  <a href="docs/style-standard.png"><img src="docs/style-standard.png" alt="The board in the Standard style" width="32%"></a>
+  <a href="docs/style-graffiti.png"><img src="docs/style-graffiti.png" alt="The board in the Graffiti style" width="32%"></a>
+  <a href="docs/style-blueprint.png"><img src="docs/style-blueprint.png" alt="The board in the Blueprint style" width="32%"></a><br>
+  <sub>Standard, Graffiti and Blueprint. Change it from the Style menu on the board.</sub>
+</p>
+
+## On your phone
+
+<img src="docs/phone.png" alt="The board at phone width, showing the Blocked column" width="250" align="right">
+
+The board works at phone width. Open its link on your phone while the Router runs on your computer.
+
+- One column at a time. Swipe, or tap a column's name, to move between them.
+- Columns that need you are marked "you", so you can check cards at a glance.
+- Tap a card to open it, then answer its question with one tap.
+- Approve a plan, send it back, or ship a tested card with the same buttons as on desktop.
+
+<br clear="right">
 
 ---
 
