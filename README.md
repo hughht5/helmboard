@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Helmboard logo: a ship's helm wheel" width="112" height="112"></p>
+
 <h1 align="center">Helmboard</h1>
 
 <p align="center"><strong>A visual board and GUI for Claude Code. Take the helm of every session.</strong></p>
@@ -6,6 +8,13 @@
   <a href="LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
   <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757.svg">
   <img alt="Platforms: macOS | Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-lightgrey.svg">
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#see-it-in-the-app">Screenshots</a> ·
+  <a href="#faq">FAQ</a>
 </p>
 
 **To install, copy this into Claude Code:**
@@ -26,6 +35,7 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 - Tell it what you want, in plain words.
 - It makes a card for each task and starts a separate session to build it.
 - An independent tester checks the work, and a critic reviews it.
+- A merge lane ships finished work one card at a time, so your sessions never fight over the same code.
 - You watch it all on a live board.
 
 **By default, you stay in control.** Big or risky tasks get a plan first. You approve it, or answer its questions with one click on the card. You test the result, then say "ship it".
@@ -61,9 +71,9 @@ Run these one at a time:
 
 | | |
 |---|---|
-| **Live board**<br>Every task is a card on a private board that moves as the work does. | **One session per task**<br>Each card gets its own Claude Code session, in its own worktree and branch. |
-| **Independent tester and critic**<br>A separate tester runs every check and leaves evidence before you see it. | **Plans first, your gates**<br>Each card is planned before building; you approve the plan or answer its questions on the card, test it, and say when it ships. |
-| **Merge lanes**<br>Approved cards ship one at a time per repo, so parallel work never collides. | **Many repos, one board**<br>One Router runs cards across all your repos, with a lane for each. |
+| 📋 **Live board**<br>Every task is a card on a private board that moves as the work does. | 🌿 **One session per task**<br>Each card gets its own Claude Code session, in its own worktree and branch. |
+| 🧪 **Independent tester and critic**<br>A separate tester runs every check and leaves evidence before you see it. | 🚦 **Plans first, your gates**<br>Each card is planned before building; you approve the plan or answer its questions on the card, test it, and say when it ships. |
+| 🚢 **Merge lanes**<br>Approved cards ship one at a time per repo, so parallel work never collides. | 🗂️ **Many repos, one board**<br>One Router runs cards across all your repos, with a lane for each. |
 
 Why: running five or ten agent sessions by hand means losing track of which is stuck, which drifted, and which two are about to merge over each other.
 
@@ -128,10 +138,20 @@ Handy phrases: "what's next?", "ship it", "take it all the way".
 
 ## How it works
 
+```mermaid
+flowchart LR
+  you(["You"]) --> router["Router"]
+  router --> session["One session<br>per card"]
+  session --> checks["Independent<br>tester and critic"]
+  checks --> review{{"Your review<br>(or #quot;all the way#quot;)"}}
+  review --> lane["Merge lane"]
+  lane --> shipped(["Shipped"])
+```
+
 1. You tell the Router a task. It makes a card and starts a session for it.
 2. Big or risky tasks get a plan first, and wait for you to approve it.
 3. A separate tester checks the work and leaves evidence. A critic reviews it.
-4. The card waits for you to test it. Say "ship it" and it goes out. Say "take it all the way" up front to skip the waiting.
+4. The card waits for you to test it. Say "ship it" and its repo's merge lane sends it out. Say "take it all the way" up front to skip the waiting.
 5. Every 15 minutes the Router checks for stuck or drifting sessions. Each mistake becomes a permanent rule, so it doesn't repeat.
 
 ## Make it yours
@@ -145,6 +165,9 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 - Models and cost: "Use cheaper models wherever you can."
 
 ## FAQ
+
+<details>
+<summary>Ten common questions</summary>
 
 **Does it need the desktop app?** Yes.
 
@@ -166,6 +189,8 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 
 **How do I update or remove it?** Ask: "Update Helmboard to the latest version" or "Remove Helmboard cleanly."
 
+</details>
+
 <details>
 <summary>How it works under the hood</summary>
 
@@ -178,6 +203,9 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 </details>
 
 ## What Helmboard does on your machine
+
+<details>
+<summary>What it publishes, runs, reads and sends</summary>
 
 Helmboard runs inside Claude Code with your permissions. In plain words, it:
 
@@ -192,6 +220,8 @@ Helmboard runs inside Claude Code with your permissions. In plain words, it:
   - `router-cards-check.js` (when a turn ends): refuses to end the Router's turn while a card's column contradicts the lane queues.
   - `router-postcompact.js` (on resume or after a compaction): feeds the Router its saved state from `~/helmboard`.
 - **Sends nothing anywhere else.** No telemetry, no analytics, no servers of its own. The only network traffic is Claude Code's own, GitHub through your `git` and `gh`, and the board page's font and library loads above.
+
+</details>
 
 ## Licence
 
