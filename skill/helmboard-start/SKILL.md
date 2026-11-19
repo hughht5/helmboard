@@ -50,7 +50,7 @@ Router can take over at any time.
 2. **Rebuild your picture from the board, not from memory.** Read Helmboard (see "The
    board") and the linked sessions. The board and each task's branch or PR are the record;
    your context gets summarised and must never be the only place a fact lives.
-3. **Read `standing.md`, `lessons.md` and `brief-rules.md`** in the `router-board` folder.
+3. **Read `standing.md`, `lessons.md` and `brief-rules.md`** in the `router-board` folder, and `project-rules.md` (optional per-install project rules, if present).
 3a. **Adopt sessions you didn't start.** A card whose `session` is not one of your linked
    sessions was handed to you: read that session's state
    (`mcp__ccd_session_mgmt__get_session`), and if it has finished, do the card's `next`

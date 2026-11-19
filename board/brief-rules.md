@@ -32,7 +32,7 @@ is here because something went wrong once. Add a line the same day a new thing g
 
 ## Browser testing: Playwright
 
-Test web pages and take screenshots with Playwright, headless (for your-app, build on `e2e/tests`).
+Test web pages and take screenshots with Playwright, headless (build on the project's existing e2e tests).
 Draw the highlight boxes with Playwright (an overlay added before each shot). Keep the script with
 the card's evidence so it can be rerun. Use Claude in Chrome only for a page that needs the owner's own
 sign-in (for example Helmboard on claude.ai). Never launch Edge or Chrome directly from the shell.
@@ -40,7 +40,7 @@ sign-in (for example Helmboard on claude.ai). Never launch Edge or Chrome direct
 ## Models
 
 Use Opus or cheaper for yourself and every subagent. Fable only on a card the Router says is
-on Fable (today: SEC-12, #1010 to #1013).
+on Fable.
 
 ## Helmboard page work
 
@@ -48,31 +48,18 @@ A card that changes `board.html` works in its own worktree of the router-board r
 `board-<n>`), never in the shared folder, and publishes only at its turn in
 `lane/board-queue.md`, holding `locks/board-html.lock`. Rules in that file.
 
-## Sign-in links for Human test
-
-Standard for every card with a screen. A card going to Human test leaves its dev stack up and sends
-the Router `logins`: [{label, persona, url}], url =
-`http://127.0.0.1:<vitePort>/dev-signin.html?ct=as-<admin|user>.<base64url of the start path>` (the packed form; a separate &next= gets cut off). Verify each lands right from a fresh browser
-(`scripts/dev-stack.sh up`, route `server/src/Internal/devSignin.ts`). No token, `ct=`, `eyJ…` or
-password anywhere.
-
-## Version bumps
-your-app's pre-commit hook needs a server version bump on every server commit. Make the bump (a
-placeholder); the merge lane sets the real version and changelog position at merge. Never commit
-with --no-verify.
-
 ## Questions go to the Router
 Ask the Router, never the owner. The Router answers for him within his standing words; a Router message quoting the owner is his word.
 
-- Queue a card on a merge lane only after its critic has passed on the final head (lesson: #1017 v32 published before the second critic pass, 18 Nov 2026).
+- Queue a card on a merge lane only after its critic has passed on the final head (a card was once published before its second critic pass).
 
-- Before any push after a rebase: `git status` must be clean (no rebase in progress). Lesson #217, 18 Nov 2026: a paused rebase was pushed, the branch emptied and GitHub closed PR 1945 for good.
+- Before any push after a rebase: `git status` must be clean (no rebase in progress). A paused rebase once got pushed, emptied the branch and GitHub closed the PR for good.
 
 - Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to Helmboard in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
 
 - Testers must check layout stability: controls must not move when their own state changes.
 
-- Check states on cards: `results`/`checks` entries use state "met" when passed (anything else shows red "Not met"). Lesson 18 Nov 2026: #211 and #216 showed all checks failing because they were stored as "open" after the tester passed. Set them to met with `by` when moving to Human test.
+- Check states on cards: `results`/`checks` entries use state "met" when passed (anything else shows red "Not met"). Cards once showed all checks failing because they were stored as "open" after the tester passed. Set them to met with `by` when moving to Human test.
 
 ## Trust rules
 1. **No unverified claims.** Every finding you report is tagged:
@@ -81,7 +68,6 @@ Ask the Router, never the owner. The Router answers for him within his standing 
    - **[guess]** when you haven't checked it. A guess is never written as fact.
    Example of what this prevents: "customers can find them in search" (#191) was a guess stated as fact.
 2. **"How I know" line.** Every report that moves a card (to Human test, Ship it, Done) ends with one line: what was actually run, where (stack/port, dataset, CI or deploy run id) and when. The Router copies it to the card's status.
-- Lesson 18 Nov (#1023): a session trimmed test output to the last lines and missed a failure. Always record exit codes, never judge a test run from trimmed output.
-- Lesson 19 Nov (v3.205.9 rolled back): a UI change (#1027 confirm dialog) broke a production smoke spec nobody ran. Card sessions must grep e2e/ for specs touching the UI they change and update/run them before the PR.
-- Lesson 19 Nov (v3.205.11 failed to deploy): PR CI doesn't run the production vite build, so the first-load budget only fails at deploy. Card sessions touching the dashboard run `checkFirstLoadBudget` on a production build before the PR; the lane runs it on the combined release.
+- A session once trimmed test output to the last lines and missed a failure. Always record exit codes, never judge a test run from trimmed output.
+- UI changes: grep the e2e specs for any that touch the UI you change, and update and run them before the PR.
 - Card text (status, summaries) is always short bullet lines starting '- ', never a block of prose.

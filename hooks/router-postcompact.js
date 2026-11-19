@@ -8,10 +8,12 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
   try { router = JSON.parse(fs.readFileSync(B + "router.json", "utf8")).session; } catch (e) { process.exit(0); }
   if ((process.env.CLAUDE_CODE_HOST_SESSION_ID || "") !== router) process.exit(0);
   const read = f => { try { return fs.readFileSync(f, "utf8"); } catch (e) { return "(missing: " + f + ")"; } };
+  const pr = fs.existsSync(B + "project-rules.md") ? ["## project-rules.md\n" + read(B + "project-rules.md")] : [];
   const ctx = [
     "You are the owner's Router and this session just compacted. Rebuild your picture from these files, not from the summary. Then re-read the board and the lane queue before acting. FIRST run CronList: if the Router check is missing, recreate it exactly from router-board/check-prompt.md.",
     "## handover.md\n" + read(B + "handover.md"),
     "## standing.md\n" + read(B + "standing.md"),
+    ...pr,
     ...(() => { try { return require("fs").readdirSync(B + "lane").filter(f => /-queue\.md$/.test(f)); } catch (e) { return []; } })()
       .map(q => "## lane/" + q + "\n" + read(B + "lane/" + q)),
     "## Router skill\n" + read("~/.claude/skills/helmboard-start/SKILL.md"),
