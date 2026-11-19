@@ -84,3 +84,4 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Lesson 18 Nov (#1023): a session trimmed test output to the last lines and missed a failure. Always record exit codes, never judge a test run from trimmed output.
 - Lesson 19 Nov (v3.205.9 rolled back): a UI change (#1027 confirm dialog) broke a production smoke spec nobody ran. Card sessions must grep e2e/ for specs touching the UI they change and update/run them before the PR.
 - Lesson 19 Nov (v3.205.11 failed to deploy): PR CI doesn't run the production vite build, so the first-load budget only fails at deploy. Card sessions touching the dashboard run `checkFirstLoadBudget` on a production build before the PR; the lane runs it on the combined release.
+- Card text (status, summaries) is always short bullet lines starting '- ', never a block of prose.
