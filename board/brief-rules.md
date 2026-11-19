@@ -73,3 +73,4 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Card text (status, summaries) is always short bullet lines starting '- ', never a block of prose.
 - Every Final action command must run when pasted as-is into the Router's PowerShell 5.1 shell: absolute paths, Push-Location to the repo checkout, one line, tested from the Router's directory before it goes on the card.
 - Final action cards must explain themselves in plain words before any command: what it does and why; exactly what it changes (what's deleted or created, with counts and examples); what's kept or untouched; the risk and what can't be undone; how to undo; how to check it worked. Bullets, no jargon.
+- Every Final action carries an `explain` field: 'what this code does' bullets (reads/writes what, where, what it touches, safe to re-run?).
