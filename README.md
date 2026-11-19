@@ -26,28 +26,28 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 
 ## Install
 
-**In the Claude desktop app:** type `/plugin` in a Code session. In the Plugins screen, click **Add**, add the marketplace `hughht5/helmboard`, then install Helmboard. Then send `/helmboard-start`.
-
-**In the terminal (Claude Code CLI)**, run these one at a time:
-
-1. Add the marketplace:
-   ```
-   /plugin marketplace add hughht5/helmboard
-   ```
-2. Install the plugin:
-   ```
-   /plugin install helmboard@helmboard
-   ```
-3. Start it (the first run sets up your board):
-   ```
-   /helmboard-start
-   ```
-
-Or paste this into Claude Code and let it do the rest (it reads [INSTALL.md](INSTALL.md)):
+Paste this into Claude Code (desktop app or terminal, macOS or Windows):
 
 ```
 Install https://github.com/hughht5/helmboard
 ```
+
+That's it. Claude follows [INSTALL.md](INSTALL.md), checks you have git, Node and the GitHub CLI (and offers to install them), sets everything up and starts it. To update later, say "Update Helmboard".
+
+<details><summary>Prefer a plugin? (terminal)</summary>
+
+Run these one at a time:
+
+```
+/plugin marketplace add hughht5/helmboard
+```
+```
+/plugin install helmboard@helmboard
+```
+```
+/helmboard-start
+```
+</details>
 
 ## Features
 
