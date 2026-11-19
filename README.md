@@ -129,6 +129,22 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 
 </details>
 
+## What Helmboard does on your machine
+
+Helmboard runs inside Claude Code with your permissions. In plain words, it:
+
+- **Publishes your board as a private claude.ai Artifact** (`board/board.html`) and writes card data to that artifact's database with Claude's `Artifact` and `ArtifactData` tools. The board stays private unless you share it. The page loads fonts from Google Fonts and pinned Chart.js and Mermaid files from cdnjs.
+- **Starts, messages and stops Claude Code sessions** for you (one per task, plus one merge lane per repo), through the Claude desktop app's session tools. `tell-helmboard` sends a message from another session to your Router.
+- **Reads and writes the `~/helmboard` folder** (or `HELMBOARD_DIR`): cards, rules, lane queues, locks and `router.json`. It runs `git init` and `git commit` there to keep a history.
+- **Runs `git` and `gh` on your repos** through the sessions it starts: branches, commits, pushes, merges to `main` by a merge lane after your approval, and `gh pr view` and CI status checks on GitHub.
+- **Runs scheduled checks** on its own cards and session usage while the Router is running.
+- **Runs four hooks** (Node.js scripts in `hooks/`), which read local files only and make no network calls:
+  - `block-shell-browser.js` (before a shell command): refuses commands that launch Edge or Chrome from the shell.
+  - `router-merge-guard.js` (before a shell command): stops the Router's sessions other than a merge lane merging or pushing to `main`; sessions it didn't start are never blocked.
+  - `router-cards-check.js` (when a turn ends): refuses to end the Router's turn while a card's column contradicts the lane queues.
+  - `router-postcompact.js` (on resume or after a compaction): feeds the Router its saved state from `~/helmboard`.
+- **Sends nothing anywhere else.** No telemetry, no analytics, no servers of its own. The only network traffic is Claude Code's own, GitHub through your `git` and `gh`, and the board page's font and library loads above.
+
 ## Licence
 
 MIT. See `LICENSE`.
