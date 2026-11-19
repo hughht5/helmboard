@@ -20,7 +20,7 @@ is here because something went wrong once. Add a line the same day a new thing g
   was done, and what to notice. Number the files in story order.
 - Sessions share one test database, the same test logins and one Chrome. Before changing
   a test person's role or permissions, an organisation's settings, or starting a dev
-  stack, follow `locks/README.md` in the `router-board` folder: take the lock, put the
+  stack, follow `locks/README.md` in the `helmboard` folder: take the lock, put the
   state back, release it. List your stack's ports in `locks/ports.md`.
 - Never pick a release version number yourself. Version numbers, the changelog's top
   entry and the vault index are settled at merge time by whichever card merges next.
@@ -44,7 +44,7 @@ on Fable.
 
 ## Helmboard page work
 
-A card that changes `board.html` works in its own worktree of the router-board repo (branch
+A card that changes `board.html` works in its own worktree of the helmboard repo (branch
 `board-<n>`), never in the shared folder, and publishes only at its turn in
 `lane/board-queue.md`, holding `locks/board-html.lock`. Rules in that file.
 

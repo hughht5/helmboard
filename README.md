@@ -1,18 +1,15 @@
-# Helmboard
+<h1 align="center">Helmboard</h1>
 
-**A visual board and GUI for Claude Code. Take the helm of every session.**
+<p align="center"><strong>A visual board and GUI for Claude Code. Take the helm of every session.</strong></p>
 
-Paste this into Claude Code (macOS or Windows) to install:
+<p align="center">
+  <a href="LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
+  <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757.svg">
+  <img alt="Platforms: macOS | Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-lightgrey.svg">
+</p>
 
-```
-Install Helmboard for me:
-1. Clone https://github.com/hughht5/helmboard
-2. Copy skill/helmboard-start and skill/tell-helmboard into ~/.claude/skills/
-3. Copy hooks/*.js (config.js too) into ~/.claude/hooks/router/
-4. Merge the hooks block from settings.example.json into ~/.claude/settings.json (don't replace the file)
-5. Copy the board folder to ~/router-board, then run git init and an empty commit there
-6. Run /helmboard-start
-```
+<!-- TODO: add docs/screenshot.png (a board screenshot) -->
+<p align="center"><img src="docs/screenshot.png" alt="The Helmboard board" width="800"></p>
 
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
 
@@ -24,7 +21,22 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 - It stops for your review, then ships what you approve, one card at a time.
 - You watch it all on a live board.
 
+## Install
+
+Paste this into Claude Code (macOS or Windows):
+
+
+## Features
+
+| | |
+|---|---|
+| **Live board**<br>Every task is a card on a private board that moves as the work does. | **One session per task**<br>Each card gets its own Claude Code session, in its own worktree and branch. |
+| **Independent tester and critic**<br>A separate tester runs every check and leaves evidence before you see it. | **Your gates**<br>It stops for plan review and human test, and ships only when you say so. |
+| **Merge lanes**<br>Approved cards ship one at a time per repo, so parallel work never collides. | **Many repos, one board**<br>One Router runs cards across all your repos, with a lane for each. |
+
 Why: running five or ten agent sessions by hand means losing track of which is stuck, which drifted, and which two are about to merge over each other.
+
+---
 
 ## Requirements
 
@@ -35,7 +47,7 @@ Works on macOS and Windows.
 - A **claude.ai account** that can publish artifacts, for the board page.
 - **Node.js** (runs the hooks), **git**, and the **`gh` CLI** signed in to GitHub (`gh auth status`).
 
-## Quick start (2 minutes)
+## Quick start
 
 1. **Start it:** the install ends by starting your Router: that session is the one you keep open.
 2. **Give it work:** type what you want in plain words ("fix the login bug", "add dark mode"). It makes a card, starts a session for it, and plans.
@@ -68,7 +80,7 @@ Tips: say "ship it" to ship; drag a card to move it; "what's next" for a summary
 | `router-postcompact.js` | SessionStart (compact, resume) | After a compaction, feeds the Router its handover, standing instructions, lane queues and skill. |
 | `block-shell-browser.js` | PreToolUse (Bash, PowerShell) | Refuses launching Edge or Chrome from the shell (use Playwright or Claude in Chrome). |
 
-Paths: the hooks read `ROUTER_DIR` (default `~/router-board`) and `ROUTER_SKILL` (default
+Paths: the hooks read `HELMBOARD_DIR` (or its older alias `ROUTER_DIR`) (default `~/helmboard`) and `ROUTER_SKILL` (default
 `~/.claude/skills/helmboard-start/SKILL.md`), in `hooks/config.js`. Keep `config.js` beside the hooks.
 The Router-only hooks act only in the session named in `router.json`, so they are safe to
 install globally.
@@ -94,7 +106,7 @@ Example `settings.json` snippet (the whole of `settings.example.json`, one event
 On macOS `$HOME` works as written. On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
 (`C:/Users/<you>/.claude/hooks/router/...`). The hooks find your home folder through Node
 (`USERPROFILE` on Windows), not `$HOME`, so to keep the board anywhere other than
-`~/router-board` set `ROUTER_DIR` (and `ROUTER_SKILL` for the skill) in your environment.
+`~/helmboard` set `HELMBOARD_DIR` (and `ROUTER_SKILL` for the skill) in your environment.
 
 ## How it works
 
@@ -134,7 +146,7 @@ it: a comment on it can approve a ship for the card it names.
 merge-guard hook blocks merges and pushes to `main` from every session it started except the
 lane. Only "all the way", said by you, lets a card go through.
 
-**Where does my data live?** In your board folder (`~/router-board`, a git repo you own) and in
+**Where does my data live?** In your board folder (`~/helmboard`, a git repo you own) and in
 the artifact's database. `cards.json` can rebuild the board if the page is ever lost.
 
 **Can I use my own columns or repos?** Repos, yes: lanes are made per repo on first ship.
