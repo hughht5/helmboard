@@ -89,6 +89,8 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 
 **Is the board public?** No, it's private to you. Don't share it: a comment on it can approve a ship.
 
+**Not on GitHub?** Ask Claude: "Adapt Helmboard to GitLab" (or "to work without a remote"). It follows [ADAPTING.md](ADAPTING.md). Untested so far.
+
 **Can it merge or deploy without me?** Not unless you say "take it all the way". Otherwise it stops and waits for your say-so.
 
 **Where does my data live?** In a folder on your machine that you own. Ask: "Where is my board stored, and can you back it up?"
