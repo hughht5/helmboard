@@ -100,6 +100,16 @@ On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
    card, and keeps every card in the right column. Each mistake becomes a permanent rule: a
    hook, a test, or a line in `brief-rules.md` and `lessons.md`.
 
+## One repo or many
+
+- One Router can manage cards across several repos. Each card names its repo.
+- Each repo gets its own merge lane, started the first time that repo has a card to ship.
+  Lanes ship one card at a time, so different repos never wait on each other.
+- Cards for the same repo queue in that repo's lane and are told to rebase after each merge.
+- Or run one Router per repo, each with its own board folder, if you want the work kept apart.
+- Pick whichever fits. Put rules that only apply to one project in `project-rules.md`, so the
+  general `brief-rules.md` stays the same everywhere.
+
 ## FAQ
 
 **Does it need the desktop app?** Yes. The Router starts, watches and opens other sessions with
