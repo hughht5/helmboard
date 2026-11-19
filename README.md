@@ -106,7 +106,7 @@ On Windows, if `$HOME` doesn't expand in your hook shell, use the full path
 - Each repo gets its own merge lane, started the first time that repo has a card to ship.
   Lanes ship one card at a time, so different repos never wait on each other.
 - Cards for the same repo queue in that repo's lane and are told to rebase after each merge.
-- Or run one Router per repo, each with its own board folder, if you want the work kept apart.
+- One Router runs per machine (per user account). To keep projects fully apart, run a second Router under another account or machine.
 - Pick whichever fits. Put rules that only apply to one project in `project-rules.md`, so the
   general `brief-rules.md` stays the same everywhere.
 
