@@ -221,7 +221,7 @@ anything else: if something just changed (a session reported, a tester finished,
 or deploy landed, he gave an instruction that moves a card), move the card and write the
 record, then do the rest. Write the board row and `cards.json` together, never one
 without the other. At each scheduled check, and whenever he asks, audit every card:
-board column against `cards.json`, old-board cards against `kb list`, and each card
+board column against `cards.json`, and each card
 against what its session, PR and deploy actually show. Fix any mismatch at once.
 
 The board is a **view**. It does not start or stop anything; you are the only writer.
@@ -267,8 +267,8 @@ Keep the columns as they are and group them for the owner like this:
 - **You answer lane and session questions**. Never leave a session waiting on the owner: decide within his standing words, and
   tell sessions in their brief to ask the Router, not the owner. Only gates that are his (plan
   approval, ship word, production) go to him, on the card.
-- **Leave the old Claude Kanban DSH board alone.** Do not move, edit or archive its cards.
-  It is frozen as a view; new work goes on the board only.
+- **One board only:** the Acme Kanban Board (artifact BjzV42LssAnkcT6H9Edabi). The old
+  Claude Kanban DSH app, `kb` and Kangentic are retired; never read or write them.
 
 ### Where the board lives
 
@@ -306,10 +306,7 @@ Keep the columns as they are and group them for the owner like this:
 - **Done cards:** the page shows the 300 most recent Done cards by `doneAt`. Always set `doneAt`. The database holds 25,000 rows: if it passes 20,000,
   remove the oldest Done rows from the page (they stay in `cards.json`) and tell the owner.
 - **New card numbers** start at 1001, so they never clash with the old board's.
-- **Old-board cards** (`source: dsh`) are a read-only copy. At start-up, and when the owner
-  asks, refresh them from `kb list` and `kb card <n>`; never write back to the old board.
-  A card the owner archived or closed here gets `source: dsh-closed`: the refresh skips it, so
-  it stays where he put it even though the old board still shows it open.
+- **Old-board cards** (`source: dsh`) are frozen copies; no refresh.
 
 ## Being reachable: "tell the router"
 
