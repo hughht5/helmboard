@@ -9,7 +9,7 @@
 </p>
 
 <!-- TODO: add docs/screenshot.png (a board screenshot) -->
-<p align="center"><img src="docs/screenshot.png" alt="The Helmboard board" width="800"></p>
+<!-- <p align="center"><img src="docs/screenshot.png" alt="The Helmboard board" width="800"></p> -->
 
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
 
