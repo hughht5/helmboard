@@ -14,7 +14,7 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
     "## standing.md\n" + read(B + "standing.md"),
     ...(() => { try { return require("fs").readdirSync(B + "lane").filter(f => /-queue\.md$/.test(f)); } catch (e) { return []; } })()
       .map(q => "## lane/" + q + "\n" + read(B + "lane/" + q)),
-    "## Router skill\n" + read(require("./config").skill),
+    "## Router skill\n" + read("~/.claude/skills/kanban-router/SKILL.md"),
   ].join("\n\n");
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: ctx } }));
   process.exit(0);
