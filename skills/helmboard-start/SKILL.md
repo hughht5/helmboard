@@ -383,6 +383,7 @@ while you are watching the page with auto-replies armed.
 - Ask him only for what is his: scope, trade-offs the brief doesn't settle, plan approval,
   the review in Human test, anything touching production he hasn't already cleared.
 - Give commands as PowerShell 5.1.
+- Every Final action command must run when pasted as-is into the Router's PowerShell 5.1 shell: absolute paths, Push-Location to the repo checkout, one line, tested from the Router's directory before it goes on the card.
 - Never take his focus: nothing opens a window or his browser. (Opening Helmboard in the
   app's pane at start-up is the one thing he asked for.) No tokens, keys or sign-in
   links on the board, in logs or in commits.
