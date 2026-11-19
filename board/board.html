@@ -201,6 +201,11 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .email .explain .xh { font-size: .8rem; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
 .email .explain .nt ul { margin: 0; padding-left: 1.2em; }
 .email .explain .nt li { margin: .1em 0; }
+.qexplain { border: 1px solid var(--line); border-left: 4px solid var(--plan); border-radius: 6px; background: var(--surface); color: var(--fg); padding: 8px 12px; font-size: .92rem; line-height: 1.5; max-width: 90ch; min-width: 0; overflow-wrap: anywhere; box-sizing: border-box; }
+.qexplain .xh { font-size: .8rem; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+.qexplain .nt ul, .plan .decn .qexplain .nt ul { display: block; list-style: disc; margin: 0; padding-left: 1.2em; font-size: inherit; }
+.qexplain .nt li, .plan .decn .qexplain .nt li { padding-left: 0; margin: .1em 0; }
+.plan .decn .qexplain .nt li::before { content: none; }
 #sheet > header .tabs { position: sticky; bottom: 0; z-index: 1; background: var(--surface); }
 #sheet > .qbox { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; overscroll-behavior: contain; }
 #sheet .pane { min-height: 120px; }
@@ -1781,6 +1786,12 @@ function drawAgents() {
 }
 // One question's controls: a button per option, a free-text answer and what was sent. Used above the tabs and in the Plan tab.
 const qStamp = q => String(q.askedAt || "") + "|" + q.text;
+// "What this is about": a question's `explain` ("- " lines, or a list), shown above its options. Text only.
+function qExplain(q) {
+  const ex = q && q.explain, text = Array.isArray(ex) ? ex.map(x => "- " + sstr(x).replace(/^\s*[-*•]\s+/, "")).join("\n") : sstr(ex);
+  if (!text.trim()) return null;
+  const x = el("div", "qexplain"); x.append(el("div", "xh", "What this is about"), bulleted("nt", text)); return x;
+}
 function questionControls(v, q, i) {
   const k = qList(v.c).length, stamp = qStamp(q), ans = answerFor(v.c, q, i);
   const ansSig = ans ? String(ans.at || "") + "|" + ans.key : "", reopened = ans && v.qOpen[stamp] === ansSig;
@@ -1855,6 +1866,7 @@ function drawQuestion() {
   const q = qs[0], ctl = questionControls(v, q, 0);
   if (q.askedAt) head.append(el("span", "hint", "asked " + when(q.askedAt)));
   box.append(head, bulleted("qtext", q.text));
+  const qx = qExplain(q); if (qx) box.append(qx);
   if (ctl.answered) box.append(ctl.ansEl);
   if (ctl.opts.children.length) box.append(ctl.opts);
   box.append(ctl.row, ctl.said);
@@ -1958,6 +1970,7 @@ const WIDGETS = {
       if (q.askedAt) top.append(el("span", "hint", "asked " + when(q.askedAt)));
       d.append(top, marked(el("h4"), q.text));
       if (arr(q.points).length) { const ul = el("ul"); q.points.forEach(pt => { if (!pt) return; ul.append(marked(el("li", pt.no ? "x" : ""), typeof pt === "string" ? pt : pt.text || "")); }); d.append(ul); }
+      const qx = qExplain(q); if (qx) d.append(qx);
       if (ctl.answered) d.append(ctl.ansEl);
       if (ctl.opts.children.length) d.append(ctl.opts);
       d.append(ctl.row, ctl.said); grid.append(d);
