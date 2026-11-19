@@ -16,7 +16,7 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
     ...pr,
     ...(() => { try { return require("fs").readdirSync(B + "lane").filter(f => /-queue\.md$/.test(f)); } catch (e) { return []; } })()
       .map(q => "## lane/" + q + "\n" + read(B + "lane/" + q)),
-    "## Router skill\n" + read("~/.claude/skills/helmboard-start/SKILL.md"),
+    "## Router skill\n" + read(require("./config").skill),
   ].join("\n\n");
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: ctx } }));
   process.exit(0);
