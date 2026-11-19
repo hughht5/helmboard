@@ -434,3 +434,7 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 - Every question you need the user to answer goes on the board, never only in chat: on its card (`question`) if it's about a card; otherwise make a small card in Blocked titled with the question, with `question` options on it.
 - Ask it in chat as well, short, with the same options and the card number ("#n on the board"). Either answer counts; record it on the card and archive the card.
 - When answered (a board comment or chat), act on it, record the answer on the card, and move or archive the card.
+
+## Final action cards
+- Before any command, explain in plain bullets: what it does and why; exactly what it changes (counts, examples); what's kept; the risk and what can't be undone; how to undo; how to check it worked.
+- Every command must run when pasted as-is into the Router's shell (tested first).
