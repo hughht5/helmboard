@@ -68,6 +68,15 @@ Why: running five or ten agent sessions by hand means losing track of which is s
   <sub>Every task is a card. The board shows which ones need you.</sub>
 </p>
 
+## Made for ultra-wide screens
+
+Helmboard uses every pixel. On a 5120-wide monitor you get the Router chat, your sessions and every column of the board on one screen, with no scrolling and nothing hidden. You can see the whole pipeline at a glance, from new ideas to shipped work.
+
+<p align="center">
+  <a href="docs/ultrawide.jpg"><img src="docs/ultrawide.jpg" alt="Helmboard on a 5120x1440 ultra-wide monitor: sessions, Router chat and the full board side by side" width="100%"></a><br>
+  <sub>The whole flow on one 5120x1440 screen. Click for full size.</sub>
+</p>
+
 ## Pick a style
 
 <p align="center">
