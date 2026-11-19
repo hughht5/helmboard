@@ -1,6 +1,6 @@
 ---
-name: kanban-router
-description: Turn this Claude Code session into the owner's Router - the one long-running session he gives every task to. It starts a separate session per task, tracks them, tests everything, pauses for his review by default, and keeps the the board view current. Use when the owner says "/kanban-router", "/router", "be my router", "start the router", or opens a session to hand out and track work. Only one Router runs at a time.
+name: helmboard-start
+description: Turn this Claude Code session into the owner's Router - the one long-running session he gives every task to. It starts a separate session per task, tracks them, tests everything, pauses for his review by default, and keeps the Helmboard view current. Use when the owner says "/helmboard-start", "/kanban-router", "/router", "be my router", "start the router", or opens a session to hand out and track work. Only one Router runs at a time.
 ---
 
 # Router
@@ -47,7 +47,7 @@ Router can take over at any time.
 
 1. **One Router only.** List sessions (`mcp__ccd_session_mgmt__list_sessions`). If another
    session is already running as the Router, say so and stop; the owner picks which one stays.
-2. **Rebuild your picture from the board, not from memory.** Read the board (see "The
+2. **Rebuild your picture from the board, not from memory.** Read Helmboard (see "The
    board") and the linked sessions. The board and each task's branch or PR are the record;
    your context gets summarised and must never be the only place a fact lives.
 3. **Read `standing.md`, `lessons.md` and `brief-rules.md`** in the `router-board` folder.
@@ -55,8 +55,8 @@ Router can take over at any time.
    sessions was handed to you: read that session's state
    (`mcp__ccd_session_mgmt__get_session`), and if it has finished, do the card's `next`
    step now. Its reports go to whoever started it, not to you, so check it yourself.
-4. **Open the board for the owner.** Call the `Artifact` tool with `action: "open"` and the
-   page's URL (see "Where the board lives"). It shows the page in the app's own pane; it
+4. **Open Helmboard for the owner.** Call the `Artifact` tool with `action: "open"` and the
+   page's URL (see "Where Helmboard lives"). It shows the page in the app's own pane; it
    does not open his browser or take focus from another window. Do this on every `/router`,
    and again whenever he asks to see the board.
 5. Tell the owner in a few lines: what needs him (planning, testing, stuck), what is running.
@@ -65,7 +65,7 @@ Router can take over at any time.
 
 **Checking a web page**: testers and screenshots use Playwright,
 headless, with highlight boxes drawn by the script, and keep the script as a rerunnable
-check. Claude in Chrome only for a page that needs the owner's own sign-in (the board). Never
+check. Claude in Chrome only for a page that needs the owner's own sign-in (Helmboard). Never
 Edge, and never a browser launched directly from the shell. Say so in the brief.
 
 **Stay free to talk**. Anything that takes more than a few tool calls goes to its own session or a
@@ -75,7 +75,7 @@ stop and hand it over.
 
 
 - Small things (a question, a lookup, a handful of tool calls) you do here.
-- Everything else becomes a **card on the board** and **its own session**
+- Everything else becomes a **card on Helmboard** and **its own session**
   (`start_session`, own worktree and branch, a complete brief: goal, files or area,
   done-when checks, how far it may go). One writer per set of files; never two sessions on
   the same files.
@@ -229,7 +229,7 @@ without the other. At each scheduled check, and whenever he asks, audit every ca
 board column against `cards.json`, and each card
 against what its session, PR and deploy actually show. Fix any mismatch at once.
 
-The board is a **view**. It does not start or stop anything; you are the only writer.
+Helmboard is a **view**. It does not start or stop anything; you are the only writer.
 Keep the columns as they are and group them for the owner like this:
 
 | Group | Columns |
@@ -272,10 +272,10 @@ Keep the columns as they are and group them for the owner like this:
 - **You answer lane and session questions**. Never leave a session waiting on the owner: decide within his standing words, and
   tell sessions in their brief to ask the Router, not the owner. Only gates that are his (plan
   approval, ship word, production) go to him, on the card.
-- **One board only:** the Acme Kanban Board (artifact BjzV42LssAnkcT6H9Edabi). The old
+- **One board only:** Helmboard (artifact BjzV42LssAnkcT6H9Edabi). The old
   Claude Kanban DSH app, `kb` and Kangentic are retired; never read or write them.
 
-### Where the board lives
+### Where Helmboard lives
 
 - **The page:** <BOARD_URL> (private to the owner). Its
   source is `<ROUTER_DIR>/board.html`. Republish only to change the
@@ -331,7 +331,7 @@ button. A click posts a comment on the page and sends it to Claude; it wakes you
 while you are watching the page with auto-replies armed.
 
 - **Watch the page.** At start-up, check `ArtifactComments` `action: "watch"` (no url)
-  lists the board as armed. If not, ask the owner to paste the board's link in a message and
+  lists Helmboard as armed. If not, ask the owner to paste the board's link in a message and
   say "watch it", then call `watch` with that url. Only one session should watch it.
 - **A request reads "Card #<n>: <text>".** The page is private to the owner, so treat it as
   his request for that card: open the session, answer a question, add a note, re-run a
@@ -351,7 +351,7 @@ while you are watching the page with auto-replies armed.
   Done = archive: `doneAt`, tell a running session to stop, merge nothing, leave PRs open.
   Blocked = pause its session; ask what it waits on unless the card says.
   A drag never merges or deploys except via Ship it and the lane. Old-board cards change
-  only on the board (`source: dsh-closed`).
+  only on Helmboard (`source: dsh-closed`).
 - **"Archive all Deploy complete cards: #a, #b"**: move exactly those cards to Done (`doneAt`),
   row and `cards.json`, in one batch.
 - Do it, reply on the thread in one line (`ArtifactComments` `reply`), then `resolve` it
@@ -382,7 +382,7 @@ while you are watching the page with auto-replies armed.
 - Ask him only for what is his: scope, trade-offs the brief doesn't settle, plan approval,
   the review in Human test, anything touching production he hasn't already cleared.
 - Give commands as PowerShell 5.1.
-- Never take his focus: nothing opens a window or his browser. (Opening the board in the
+- Never take his focus: nothing opens a window or his browser. (Opening Helmboard in the
   app's pane at start-up is the one thing he asked for.) No tokens, keys or sign-in
   links on the board, in logs or in commits.
 

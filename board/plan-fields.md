@@ -1,6 +1,6 @@
 # Plan tab fields
 
-What the board's Plan tab and subagents strip read, and where each field lives. Every field is optional: the page leaves a block out when its data is missing. The page only reads these; the Router writes them.
+What Helmboard's Plan tab and subagents strip read, and where each field lives. Every field is optional: the page leaves a block out when its data is missing. The page only reads these; the Router writes them.
 
 Agreed with the Router on 18 Nov 2026 (card #1006). The code that reads them is `drawPlan`, `drawAgents` and `questionControls` in `board.html`.
 

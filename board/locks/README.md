@@ -19,6 +19,6 @@ lock that is not yours.
 
 ## board.html
 
-Any session may edit the board's page, one at a time. Take the lock by writing your card number
+Any session may edit Helmboard's page, one at a time. Take the lock by writing your card number
 and session id to `locks/board-html.lock`, and delete the file once you have published. If the
 file exists, wait. Each board change is its own card.

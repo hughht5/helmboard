@@ -1,6 +1,10 @@
-# claude-router
+# Helmboard
 
-Talk to one Claude Code session; let it run all the others. The Router is a skill that turns
+**A visual board and GUI for Claude Code. Take the helm of every session.**
+
+Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
+
+Talk to one Claude Code session; let it run all the others. Helmboard works through the Router, a skill that turns
 a long-running Claude Code session into a dispatcher: you hand it tasks in plain words, and it
 makes a card for each, starts a separate session per task in its own worktree, has an
 independent tester prove the work, stops for your review, and ships approved cards one at a
@@ -15,31 +19,26 @@ which is stuck, which drifted, and which two are about to merge over each other.
 - A **claude.ai account** that can publish artifacts, for the board page.
 - `git`, the `gh` CLI signed in to GitHub, and Node.js (for the hooks).
 
-## Quick start
+## Quick start (2 minutes)
 
-1. **Clone** it: `git clone https://github.com/hughht5/claude-router && cd claude-router`
-2. **Install the skills and hooks:**
-   ```sh
-   mkdir -p ~/.claude/skills ~/.claude/hooks/router
-   cp -r skill/router skill/tell-router ~/.claude/skills/
-   cp hooks/*.js ~/.claude/hooks/router/
+1. **Install:** paste this into Claude Code and let it do the work.
    ```
-3. **Make your board folder** from the template and put it under git:
-   ```sh
-   cp -r board ~/router-board && cd ~/router-board && git init && git add -A && git commit -m "Empty board"
+   Install Helmboard: clone https://github.com/hughht5/helmboard, copy its skill/helmboard-start and skill/tell-helmboard folders into ~/.claude/skills/, copy hooks/*.js into ~/.claude/hooks/router/, merge the hooks block from settings.example.json into my ~/.claude/settings.json (do not replace the file), copy its board folder to ~/router-board and run git init and an empty commit there, then run /helmboard-start.
    ```
-4. **Add the hooks** to `~/.claude/settings.json`: merge the `hooks` block from
-   `settings.example.json` into yours (don't replace your file).
-5. **Start it:** open a new session in the desktop app and type `/router`. On first run it
-   publishes `board.html` as a private artifact, saves the link in `router.json`, and opens
-   an empty board beside you. Then give it a task.
+   It ends by starting your Router: that session is the one you keep open.
+2. **Give it work:** type what you want in plain words ("fix the login bug", "add dark mode"). It makes a card, starts a session for it, and plans.
+3. **Watch the board:** the Router publishes your board as a private artifact. Cards move: Backlog, Planning, Plan review, In progress, Human test, Ship it, Deploy complete, Done.
+4. **Your gates:** you approve plans (Plan review), test (Human test) and say "ship it". Answer card questions with the buttons on the card or by commenting.
+5. **From any other session:** type `/tell-helmboard` to hand that conversation's task to the Router.
+
+Tips: say "ship it" to ship; drag a card to move it; "what's next" for a summary.
 
 ## The parts
 
 | Part | Where | What it does |
 |---|---|---|
-| Router skill | `skill/router/SKILL.md` | How the Router behaves: cards, briefs, models, testing, review gates, watching for stuck or drifting sessions, shipping. |
-| tell-router skill | `skill/tell-router/SKILL.md` | Lets any other session hand a task to the Router with a full brief. |
+| helmboard-start skill | `skill/helmboard-start/SKILL.md` | How the Router behaves: cards, briefs, models, testing, review gates, watching for stuck or drifting sessions, shipping. |
+| tell-helmboard skill | `skill/tell-helmboard/SKILL.md` | Lets any other session hand a task to the Router with a full brief. |
 | Board artifact | `board/board.html` | The board: columns, card faces, full view, Plan tab, questions with answer buttons, an "Ask the Router" box. Cards live in the artifact's database; `cards.json` is the record it can be rebuilt from. |
 | Session rules | `board/brief-rules.md` | Pasted into every session the Router starts. One line per thing that once went wrong. |
 | Plan schema | `board/plan-fields.md` | The fields the Plan tab draws. |
@@ -58,7 +57,7 @@ which is stuck, which drifted, and which two are about to merge over each other.
 | `block-shell-browser.js` | PreToolUse (Bash, PowerShell) | Refuses launching Edge or Chrome from the shell (use Playwright or Claude in Chrome). |
 
 Paths: the hooks read `ROUTER_DIR` (default `~/router-board`) and `ROUTER_SKILL` (default
-`~/.claude/skills/router/SKILL.md`), in `hooks/config.js`. Keep `config.js` beside the hooks.
+`~/.claude/skills/helmboard-start/SKILL.md`), in `hooks/config.js`. Keep `config.js` beside the hooks.
 The Router-only hooks act only in the session named in `router.json`, so they are safe to
 install globally.
 

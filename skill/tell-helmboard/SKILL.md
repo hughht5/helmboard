@@ -1,6 +1,6 @@
 ---
-name: tell-kanban-router
-description: Hand a task from this session to the owner's Router session, so the Router makes the card and gets it built. Use when the owner says "tell the router", "give this to the router", "have the router start this", "send it to the router", or "/tell-router".
+name: tell-helmboard
+description: Hand a task from this session to the owner's Router session, so the Router makes the card and gets it built. Use when the owner says "tell the router", "give this to the router", "have the router start this", "send it to the router", "/tell-helmboard" or "/tell-router".
 ---
 
 # Tell the Router
@@ -10,7 +10,7 @@ The owner has worked something out with you and wants the Router to take it from
 1. **Find the Router.** Read `<ROUTER_DIR>/router.json` for its session
    id. Check it is still running (`mcp__ccd_session_mgmt__list_sessions`). If the file is
    missing or that session is gone, tell the owner "the Router isn't running; start a session
-   and run /kanban-router" and stop. Never start a Router yourself.
+   and run /helmboard-start" and stop. Never start a Router yourself.
 2. **Write a complete brief.** The Router has none of this conversation. In your own
    words: the goal, the repo and files or area, what was decided here and why, what was
    ruled out, the done-when checks, and anything the owner said about how far it goes (plan

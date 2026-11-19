@@ -35,14 +35,14 @@ is here because something went wrong once. Add a line the same day a new thing g
 Test web pages and take screenshots with Playwright, headless (for your-app, build on `e2e/tests`).
 Draw the highlight boxes with Playwright (an overlay added before each shot). Keep the script with
 the card's evidence so it can be rerun. Use Claude in Chrome only for a page that needs the owner's own
-sign-in (for example the board on claude.ai). Never launch Edge or Chrome directly from the shell.
+sign-in (for example Helmboard on claude.ai). Never launch Edge or Chrome directly from the shell.
 
 ## Models
 
 Use Opus or cheaper for yourself and every subagent. Fable only on a card the Router says is
 on Fable (today: SEC-12, #1010 to #1013).
 
-## The board page work
+## Helmboard page work
 
 A card that changes `board.html` works in its own worktree of the router-board repo (branch
 `board-<n>`), never in the shared folder, and publishes only at its turn in
@@ -68,7 +68,7 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 
 - Before any push after a rebase: `git status` must be clean (no rebase in progress). Lesson #217, 18 Nov 2026: a paused rebase was pushed, the branch emptied and GitHub closed PR 1945 for good.
 
-- Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to the board in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
+- Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to Helmboard in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
 
 - Testers must check layout stability: controls must not move when their own state changes.
 
