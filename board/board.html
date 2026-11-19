@@ -206,6 +206,9 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .qexplain .nt ul, .plan .decn .qexplain .nt ul { display: block; list-style: disc; margin: 0; padding-left: 1.2em; font-size: inherit; }
 .qexplain .nt li, .plan .decn .qexplain .nt li { padding-left: 0; margin: .1em 0; }
 .plan .decn .qexplain .nt li::before { content: none; }
+.finals .whyrun { border-left-color: var(--mail); max-width: none; }
+.fchip.showdone { margin-left: 8px; border-style: dashed; }
+.fchip.showdone[aria-pressed="true"] { border-style: solid; }
 #sheet > header .tabs { position: sticky; bottom: 0; z-index: 1; background: var(--surface); }
 #sheet > .qbox { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; overscroll-behavior: contain; }
 #sheet .pane { min-height: 120px; }
@@ -1323,6 +1326,9 @@ function explainBlock(box, explain) {
 }
 function actionsBlock(c) {
   const wrap = el("div", "finals"), acts = actionsOf(c), num = "#" + (c.n ?? c.id);
+  // "Why run this": the card's `why` ("- " lines, or a list), at the top of the Final action section. Text only.
+  { const w = c.why, text = Array.isArray(w) ? w.map(x => "- " + sstr(x).replace(/^\s*[-*•]\s+/, "")).join("\n") : sstr(w);
+    if (text.trim()) { const x = el("div", "qexplain whyrun"); x.append(el("div", "xh", "Why run this"), bulleted("nt", text)); wrap.append(x); } }
   if (!acts.length) { const box = el("div", "email"); box.append(el("h3", "", "Final step"), el("div", "enone", "Steps coming from the Router")); wrap.append(box); return wrap; }
   const all = el("div", "allok", "All done. Archive the card when you're ready."); all.hidden = !acts.every((a, k) => isDone(c, a, k));
   acts.forEach((a, k) => {
@@ -2591,9 +2597,14 @@ try { const s = JSON.parse(localStorage.getItem("boardv2.filters") || "null"); i
 function keepFilters() { try { localStorage.setItem("boardv2.filters", JSON.stringify(F)); } catch (e) {} }
 const WEAK = new Set(); // cards matched only in their status or next-step text; listed after the others
 let chipSig = "";
+// Done is hidden unless the viewer turns on "Show Done" (kept per viewer). While hidden, Done cards feed no filter values.
+let SHOW_DONE = false; try { SHOW_DONE = localStorage.getItem("boardv2.showdone") === "1"; } catch (e) {}
+const inView = c => SHOW_DONE || (PENDING[c.id] ? PENDING[c.id].to : colOf(c)) !== "Done";
+const colsInView = () => COLS.filter(([n]) => SHOW_DONE || n !== "Done");
+let VIS_TOTAL = 0;
 function drawChips(cards) {
-  const opts = KINDS.map(([key, word, get]) => { const set = new Set(F[key]); cards.forEach(c => [].concat(get(c)).forEach(v => { if (v) set.add(v); })); return [key, word, [...set].sort()]; });
-  const sig = JSON.stringify([opts, F]); if (sig === chipSig) return; chipSig = sig;
+  const opts = KINDS.map(([key, word, get]) => { const set = new Set(F[key]); cards.filter(inView).forEach(c => [].concat(get(c)).forEach(v => { if (v) set.add(v); })); return [key, word, [...set].sort()]; });
+  const sig = JSON.stringify([opts, F, SHOW_DONE]); if (sig === chipSig) return; chipSig = sig;
   const box = $("chips"), had = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.chip : null;
   box.replaceChildren();
   const chip = (id, word, on, flip) => {

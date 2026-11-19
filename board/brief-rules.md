@@ -76,3 +76,4 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 - Every Final action carries an `explain` field: 'what this code does' bullets (reads/writes what, where, what it touches, safe to re-run?).
 - Every card question carries an `explain` field: 'what this is about' in plain bullets (what the card is, what's settled, what the choice really is, my pick).
 - Every Final action card carries a card-level `why` field: why the owner should run it, what happens if he doesn't.
+- Model per card: Opus for planning, complex or risky builds (security, forecasts, cross-cutting UI) and critics; Sonnet for clear contained builds and testers; Haiku for read-only checks, status lookups and log reading. Fable only when the owner names it. Set it at start_session (`model`) and show it on the card.

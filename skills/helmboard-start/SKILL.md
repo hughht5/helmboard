@@ -438,3 +438,7 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 ## Final action cards
 - Before any command, explain in plain bullets: what it does and why; exactly what it changes (counts, examples); what's kept; the risk and what can't be undone; how to undo; how to check it worked.
 - Every command must run when pasted as-is into the Router's shell (tested first).
+
+## Choosing a model per card
+- Opus: planning, complex or risky builds, critics. Sonnet: clear contained builds, testers. Haiku: read-only checks and lookups.
+- Pass `model` to start_session (and to subagents); show model and effort on the card. Switch a running session with set_session_model when its work turns out simpler or harder than expected.
