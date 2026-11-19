@@ -16,11 +16,13 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 **Talk to one Claude Code session. It runs all the others.**
 
 - Tell it what you want, in plain words.
-- It makes a card for each task. Big or risky ones get a plan first: what changes, the risks, and how it will be checked (or say "plan first" for any task).
-- You approve the plan, or answer its questions with one click on the card.
-- A separate session builds it, and an independent tester checks the work.
-- It stops for your review, then ships what you approve, one card at a time.
+- It makes a card for each task and starts a separate session to build it.
+- An independent tester checks the work, and a critic reviews it.
 - You watch it all on a live board.
+
+**By default, you stay in control.** Big or risky tasks get a plan first. You approve it, or answer its questions with one click on the card. You test the result, then say "ship it".
+
+**Or let it run.** Say "take it all the way" and it plans, builds, tests and ships on its own, skipping the human checks. It still won't ship anything that fails its tests.
 
 ## Install
 
