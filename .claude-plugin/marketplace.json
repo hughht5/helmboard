@@ -1,0 +1,14 @@
+{
+  "name": "helmboard",
+  "description": "Helmboard: a Router session and board for Claude Code",
+  "owner": { "name": "Hugh Halford-Thompson" },
+  "plugins": [
+    {
+      "name": "helmboard",
+      "description": "A Router session for Claude Code: give it every task; it starts a session per task, tracks them on a board, tests everything and pauses for your review.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": { "name": "Hugh Halford-Thompson" }
+    }
+  ]
+}

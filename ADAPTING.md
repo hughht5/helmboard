@@ -10,7 +10,7 @@ Two modes:
 
 ## (a) Open a change for review
 
-- **`skill/helmboard-start/SKILL.md`, "Shipping" (bullet "Work reaches `main` only through a PR with passing CI").**
+- **`skills/helmboard-start/SKILL.md`, "Shipping" (bullet "Work reaches `main` only through a PR with passing CI").**
   - Today: every change reaches `main` through a PR.
   - GitLab: "merge request (MR)". Sessions open it with `glab mr create`.
   - Local-only: no review object. The card's branch, pushed nowhere, is the record. Say "Work reaches `main` only through the merge lane, after the tester has passed and tests are green."

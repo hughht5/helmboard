@@ -26,13 +26,20 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 
 ## Install
 
-Paste this into Claude Code (macOS or Windows):
+In Claude Code (macOS or Windows):
+
+```
+/plugin marketplace add hughht5/helmboard
+/plugin install helmboard@helmboard
+```
+
+Then run `/helmboard-start`. It sets up your board on its first run.
+
+Or paste this into Claude Code and let it do the rest (it reads [INSTALL.md](INSTALL.md)):
 
 ```
 Install https://github.com/hughht5/helmboard
 ```
-
-That's it. Claude reads [INSTALL.md](INSTALL.md) and does the rest.
 
 ## Features
 
@@ -58,7 +65,7 @@ Missing something? Ask Claude: "Check I have everything Helmboard needs and fix 
 
 ## Quick start
 
-1. Paste the install text above. It ends by starting your Router. Keep that session open.
+1. Install as above and run `/helmboard-start`. That session is your Router. Keep that session open.
 2. Tell it what you want: "fix the login bug", "add dark mode". It makes a card and gets on with it.
 3. Watch the board. You approve plans, test the result, and say "ship it".
 4. In any other session, say "tell the router" to hand that task over.
@@ -108,11 +115,11 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 <details>
 <summary>How it works under the hood</summary>
 
-- Skills: `helmboard-start` (the Router) and `tell-helmboard` (hand-off from other sessions), in `skill/`.
+- Skills: `helmboard-start` (the Router) and `tell-helmboard` (hand-off from other sessions), in `skills/`. The plugin manifest is in `.claude-plugin/`.
 - Board: `board/board.html`, published as a private artifact. Cards are kept in your board folder (`~/helmboard`), which is a git repo.
 - Rules: `board/brief-rules.md` goes into every session the Router starts.
 - Merge lanes: one session per repo ships approved cards one at a time.
-- Hooks (`hooks/`): stop non-lane sessions merging to `main`, keep cards and lane queues consistent, restore the Router's context after a compaction, and refuse launching a browser from the shell. They only act in the Router's own session.
+- Hooks (`hooks/`, registered by `hooks/hooks.json`): stop non-lane sessions merging to `main`, keep cards and lane queues consistent, restore the Router's context after a compaction, and refuse launching a browser from the shell. They only act in the Router's own session.
 
 </details>
 

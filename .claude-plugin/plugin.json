@@ -1,0 +1,10 @@
+{
+  "name": "helmboard",
+  "description": "A Router session for Claude Code: give it every task; it starts a session per task, tracks them on a board, tests everything and pauses for your review.",
+  "version": "0.1.0",
+  "author": { "name": "Hugh Halford-Thompson" },
+  "homepage": "https://github.com/hughht5/helmboard",
+  "repository": "https://github.com/hughht5/helmboard",
+  "license": "MIT",
+  "keywords": ["router", "kanban", "board", "sessions", "orchestration"]
+}
