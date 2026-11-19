@@ -11,4 +11,4 @@ The user asked you to install (or update) Helmboard. Do these steps, then start 
 4. Copy every file in `hooks/` except `hooks.json` into `~/.claude/hooks/helmboard/`.
 5. Register the hooks in `~/.claude/settings.json`: take the `hooks` block from `hooks/hooks.json`, replace `${CLAUDE_PLUGIN_ROOT}/hooks/` with the full path of `~/.claude/hooks/helmboard/` (forward slashes), and merge it in. Never replace the file or remove the user's own settings; don't add an entry that's already there.
 6. If `~/helmboard` doesn't exist, copy the `board` folder there, then run `git init` and an empty first commit in it. If it exists, leave the user's cards alone; only replace `board.html`.
-7. Delete the temporary folder. Tell the user in two lines what you installed, then run `/helmboard-start` (or ask them to send it, if you can't).
+7. Delete the temporary folder. Tell the user in two lines what you installed. New skills load when a session starts, so tell them: "Open a new Claude Code session and send /helmboard-start."

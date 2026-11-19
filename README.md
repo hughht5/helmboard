@@ -32,7 +32,7 @@ Paste this into Claude Code (desktop app or terminal, macOS or Windows):
 Install https://github.com/hughht5/helmboard
 ```
 
-That's it. Claude follows [INSTALL.md](INSTALL.md), checks you have git, Node and the GitHub CLI (and offers to install them), sets everything up and starts it. To update later, say "Update Helmboard".
+That's it. Claude follows [INSTALL.md](INSTALL.md), checks you have git, Node and the GitHub CLI (and offers to install them), and sets everything up. Then open a new session and send `/helmboard-start`. To update later, say "Update Helmboard".
 
 <details><summary>Prefer a plugin? (terminal)</summary>
 
