@@ -29,14 +29,10 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 Paste this into Claude Code (macOS or Windows):
 
 ```
-Install Helmboard for me:
-1. Clone https://github.com/hughht5/helmboard
-2. Copy skill/helmboard-start and skill/tell-helmboard into ~/.claude/skills/
-3. Copy hooks/*.js (config.js too) into ~/.claude/hooks/router/
-4. Merge the hooks block from settings.example.json into ~/.claude/settings.json (don't replace the file)
-5. Copy the board folder to ~/helmboard, then run git init and an empty commit there
-6. Run /helmboard-start
+Install https://github.com/hughht5/helmboard
 ```
+
+That's it. Claude reads [INSTALL.md](INSTALL.md) and does the rest.
 
 ## Features
 
