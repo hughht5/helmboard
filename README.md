@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/board.png"><img src="docs/board.png" alt="The Helmboard board: columns from Backlog to Human test, with cards waiting on a question, a test or a ship" width="900"></a><br>
-  <sub>Every task is a card. The board shows which ones need you.</sub>
+  <a href="docs/desktop-app.png"><img src="docs/desktop-app.png" alt="The Claude desktop app with the Router's sessions, the Router chat and the board side by side" width="900"></a><br>
+  <sub>The Router's sessions, its chat and the board, side by side in the Claude desktop app.</sub>
 </p>
 
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
@@ -64,8 +64,8 @@ Why: running five or ten agent sessions by hand means losing track of which is s
 ## See it in the app
 
 <p align="center">
-  <a href="docs/desktop-app.png"><img src="docs/desktop-app.png" alt="The Claude desktop app with the Router's sessions, the Router chat and the board side by side" width="900"></a><br>
-  <sub>The Router's sessions, its chat and the board, side by side in the Claude desktop app.</sub>
+  <a href="docs/board.png"><img src="docs/board.png" alt="The Helmboard board: columns from Backlog to Human test, with cards waiting on a question, a test or a ship" width="900"></a><br>
+  <sub>Every task is a card. The board shows which ones need you.</sub>
 </p>
 
 ## Pick a style
