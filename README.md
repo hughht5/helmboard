@@ -16,8 +16,9 @@ Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal:
 **Talk to one Claude Code session. It runs all the others.**
 
 - Tell it what you want, in plain words.
-- It makes a card for each task and starts a separate session to build it.
-- An independent tester checks the work.
+- It makes a card for each task and plans it first: what changes, the risks, and how it will be checked.
+- You approve the plan, or answer its questions with one click on the card.
+- A separate session builds it, and an independent tester checks the work.
 - It stops for your review, then ships what you approve, one card at a time.
 - You watch it all on a live board.
 
@@ -31,7 +32,7 @@ Paste this into Claude Code (macOS or Windows):
 | | |
 |---|---|
 | **Live board**<br>Every task is a card on a private board that moves as the work does. | **One session per task**<br>Each card gets its own Claude Code session, in its own worktree and branch. |
-| **Independent tester and critic**<br>A separate tester runs every check and leaves evidence before you see it. | **Your gates**<br>It stops for plan review and human test, and ships only when you say so. |
+| **Independent tester and critic**<br>A separate tester runs every check and leaves evidence before you see it. | **Plans first, your gates**<br>Each card is planned before building; you approve the plan or answer its questions on the card, test it, and say when it ships. |
 | **Merge lanes**<br>Approved cards ship one at a time per repo, so parallel work never collides. | **Many repos, one board**<br>One Router runs cards across all your repos, with a lane for each. |
 
 Why: running five or ten agent sessions by hand means losing track of which is stuck, which drifted, and which two are about to merge over each other.

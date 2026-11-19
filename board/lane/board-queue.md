@@ -1,6 +1,6 @@
 # Ship lane: the board page (board.html)
 
-Each board card edits its OWN copy, never `board.html` itself: `git worktree add ../router-board-<n> -b board-<n>`
+Each board card edits its OWN copy, never `board.html` itself: `git worktree add ../helmboard-<n> -b board-<n>`
 in the board folder's repo, and edit `board.html` there. At its turn it rebases onto the latest
 `main` (which holds the live page), resolves any conflict, checks it in a browser, publishes, then
 merges its branch into `main`.
