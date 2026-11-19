@@ -31,9 +31,10 @@ In Claude Code (macOS or Windows):
 ```
 /plugin marketplace add hughht5/helmboard
 /plugin install helmboard@helmboard
+/helmboard-start
 ```
 
-Then run `/helmboard-start`. It sets up your board on its first run.
+The first run sets up your board.
 
 Or paste this into Claude Code and let it do the rest (it reads [INSTALL.md](INSTALL.md)):
 
