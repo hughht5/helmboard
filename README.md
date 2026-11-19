@@ -2,6 +2,18 @@
 
 **A visual board and GUI for Claude Code. Take the helm of every session.**
 
+Paste this into Claude Code (macOS or Windows) to install:
+
+```
+Install Helmboard for me:
+1. Clone https://github.com/hughht5/helmboard
+2. Copy skill/helmboard-start and skill/tell-helmboard into ~/.claude/skills/
+3. Copy hooks/*.js (config.js too) into ~/.claude/hooks/router/
+4. Merge the hooks block from settings.example.json into ~/.claude/settings.json (don't replace the file)
+5. Copy the board folder to ~/router-board, then run git init and an empty commit there
+6. Run /helmboard-start
+```
+
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
 
 Talk to one Claude Code session; let it run all the others. Helmboard works through the Router, a skill that turns
@@ -23,11 +35,7 @@ Works on macOS and Windows.
 
 ## Quick start (2 minutes)
 
-1. **Install:** paste this into Claude Code and let it do the work.
-   ```
-   Install Helmboard: clone https://github.com/hughht5/helmboard, copy its skill/helmboard-start and skill/tell-helmboard folders into ~/.claude/skills/, copy hooks/*.js into ~/.claude/hooks/router/, merge the hooks block from settings.example.json into my ~/.claude/settings.json (do not replace the file), copy its board folder to ~/router-board and run git init and an empty commit there, then run /helmboard-start.
-   ```
-   It ends by starting your Router: that session is the one you keep open.
+1. **Start it:** the install ends by starting your Router: that session is the one you keep open.
 2. **Give it work:** type what you want in plain words ("fix the login bug", "add dark mode"). It makes a card, starts a session for it, and plans.
 3. **Watch the board:** the Router publishes your board as a private artifact. Cards move: Backlog, Planning, Plan review, In progress, Human test, Ship it, Deploy complete, Done.
 4. **Your gates:** you approve plans (Plan review), test (Human test) and say "ship it". Answer card questions with the buttons on the card or by commenting.
