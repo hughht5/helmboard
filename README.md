@@ -16,13 +16,15 @@ Install Helmboard for me:
 
 Helmboard is a Claude Code dashboard for pro vibe coders who want less terminal: one board to see, steer and ship every session.
 
-Talk to one Claude Code session; let it run all the others. Helmboard works through the Router, a skill that turns
-a long-running Claude Code session into a dispatcher: you hand it tasks in plain words, and it
-makes a card for each, starts a separate session per task in its own worktree, has an
-independent tester prove the work, stops for your review, and ships approved cards one at a
-time through a per-repo merge lane. A private claude.ai artifact is the board you watch and
-click. It exists because running five or ten agent sessions by hand means losing track of
-which is stuck, which drifted, and which two are about to merge over each other.
+**Talk to one Claude Code session. It runs all the others.**
+
+- Tell it what you want, in plain words.
+- It makes a card for each task and starts a separate session to build it.
+- An independent tester checks the work.
+- It stops for your review, then ships what you approve, one card at a time.
+- You watch it all on a live board.
+
+Why: running five or ten agent sessions by hand means losing track of which is stuck, which drifted, and which two are about to merge over each other.
 
 ## Requirements
 
