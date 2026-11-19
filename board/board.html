@@ -2475,9 +2475,9 @@ function navCounts(cards) {
   }
   if (!mPicked && cards.some(c => c.column !== "Done")) { // wait for the open cards; the Done list can land first
     // First visit on this device: the first column that needs the owner and has cards, else the first with cards.
-    const you = COLS.filter(([n]) => NAV[n].classList.contains("you") && (total[n] || qs[n]));
-    const q = COLS.find(([n]) => qs[n]);
-    const pick = (you[0] || q || COLS.find(([n]) => total[n]) || COLS[0])[0];
+    const vc = colsInView(), you = vc.filter(([n]) => NAV[n].classList.contains("you") && (total[n] || qs[n]));
+    const q = vc.find(([n]) => qs[n]);
+    const pick = (you[0] || q || vc.find(([n]) => total[n]) || vc[0])[0];
     mPicked = true; showCol(pick, false);
   } else if (!MCOL) showCol(COLS[0][0], false);
 }
@@ -2487,8 +2487,8 @@ function navCounts(cards) {
   bd.addEventListener("touchend", e => {
     if (x0 == null || $("veil")) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
     if (Math.abs(dx) < 60 || Math.abs(dx) < 1.5 * Math.abs(dy) || Date.now() - t0 > 800) return;
-    const i = COLS.findIndex(x => x[0] === MCOL), j = i + (dx < 0 ? 1 : -1);
-    if (j >= 0 && j < COLS.length) showCol(COLS[j][0], true);
+    const vc = colsInView(), i = vc.findIndex(x => x[0] === MCOL), j = i + (dx < 0 ? 1 : -1);
+    if (j >= 0 && j < vc.length) showCol(vc[j][0], true);
   }, { passive: true });
   PHONE.addEventListener("change", () => { if (MCOL) showCol(MCOL, false); repaint(); });
 }
@@ -2618,6 +2618,8 @@ function drawChips(cards) {
     box.append(el("span", "fkind", word));
     vals.forEach(v => chip(key + ":" + v, v, F[key].includes(v), () => { F[key] = F[key].includes(v) ? F[key].filter(x => x !== v) : [...F[key], v]; }));
   });
+  chip("showdone", "Show Done", SHOW_DONE, () => { SHOW_DONE = !SHOW_DONE; try { localStorage.setItem("boardv2.showdone", SHOW_DONE ? "1" : "0"); } catch (e) {} });
+  box.lastChild.classList.add("showdone");
   const n = activeCount(F), clear = $("clear");
   clear.textContent = n ? "Clear filters (" + n + ")" : "Clear filters"; clear.disabled = !n;
   if (had) { const again = [...box.children].find(x => x.dataset.chip === had); if (again) again.focus(); }
@@ -2625,13 +2627,16 @@ function drawChips(cards) {
 function render(cards) {
   LAST = cards; if (DRAG) return -1;
   const by = {}, total = {}; COLS.forEach(([name]) => { by[name] = []; total[name] = 0; });
-  const on = activeCount(F) > 0, now = Date.now(); let shown = 0; WEAK.clear();
+  const on = activeCount(F) > 0, now = Date.now(); let shown = 0; WEAK.clear(); VIS_TOTAL = 0;
   cards.forEach(c => {
     if (PENDING[c.id] && colOf(c) !== PENDING[c.id].from) { clearTimeout(PENDING[c.id].timer); delete PENDING[c.id]; }
     const col = PENDING[c.id] ? PENDING[c.id].to : colOf(c);
-    total[col]++; const rank = matches(c, F, now); if (rank) { by[col].push(c); shown++; if (rank === 2) WEAK.add(c.id); }
+    total[col]++; const rank = matches(c, F, now), vis = SHOW_DONE || col !== "Done"; if (vis) VIS_TOTAL++;
+    if (rank) { by[col].push(c); if (vis) shown++; if (rank === 2) WEAK.add(c.id); }
     if (V && V.c.id === c.id) liveRow(c);
   });
+  boxes.Done.sec.hidden = !SHOW_DONE; if (NAV.Done) NAV.Done.hidden = !SHOW_DONE;
+  if (!SHOW_DONE && MCOL === "Done") showCol(colsInView()[0][0], false);
   for (const name in by) {
     // Ship it lists cards in shipping order (shipOrder, lowest first); cards without one go last.
     const order = c => name === "Ship it" && c.shipOrder != null && c.shipOrder !== "" && Number.isFinite(+c.shipOrder) ? +c.shipOrder : Infinity;
@@ -2645,7 +2650,7 @@ function render(cards) {
   return shown;
 }
 let stampNow = null;
-function repaint() { const shown = render(LAST); if (stampNow && shown >= 0) stampNow(shown, LAST.length); }
+function repaint() { const shown = render(LAST); if (stampNow && shown >= 0) stampNow(shown, VIS_TOTAL); }
 {
   const q = $("q"); q.value = F.q;
   q.addEventListener("input", () => { F.q = q.value; keepFilters(); repaint(); });
@@ -2668,7 +2673,7 @@ function start(db) {
     const seen = new Set(), all = [];
     [...live, ...done].forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); all.push(c); } });
     stampNow = (shown, n) => { stamp.textContent = (shown < n ? shown + " of " + n : n) + " cards · refreshed " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
-    const shown = render(all); if (shown >= 0) stampNow(shown, all.length);
+    const shown = render(all); if (shown >= 0) stampNow(shown, VIS_TOTAL);
   };
   const rows = snap => snap.docs.map(d => { const c = { id: d.id, ...d.data() }; if (c.column === OLD_FINAL) c.column = FINAL; return c; });
   const fail = e => { clearTimeout(timer); note.hidden = false; note.textContent = "The cards stopped updating (" + (e && e.code || "error") + "). Reopen the page to reconnect."; };

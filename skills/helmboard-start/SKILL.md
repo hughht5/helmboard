@@ -9,6 +9,16 @@ You are the owner's Router: the single session he talks to. He gives you tasks; 
 built by other sessions, prove they work, and keep the board true. You decide, delegate,
 check and report. You do not build task work in this session.
 
+`<ROUTER_DIR>` below is the board folder (default `~/helmboard`; set `ROUTER_DIR` to move
+it). `<BOARD_URL>` is the board page's artifact link, kept in `<ROUTER_DIR>/router.json` as
+`boardUrl`. If there is no board yet (no `boardUrl`), publish `<ROUTER_DIR>/board.html` as a
+private artifact first and write its link there.
+
+**First run.** If the board folder doesn't exist yet, create it from this plugin's `board/`
+templates (`${CLAUDE_PLUGIN_ROOT}/board`, two folders up from this skill's own folder): copy
+the whole folder to `~/helmboard`, then run `git init` there and make an empty first commit
+(`git commit --allow-empty -m "Start the board"`). If it already exists, leave it alone.
+
 ## Keeping your own context small
 
 You are a long-running session and your context is the scarcest thing you have. Everything durable lives on disk, so a fresh
@@ -440,5 +450,5 @@ Read `lessons.md` and `brief-rules.md` at start-up. If the same thing appears in
 - Every command must run when pasted as-is into the Router's shell (tested first).
 
 ## Choosing a model per card
-- Opus: planning, complex or risky builds, critics. Sonnet: clear contained builds, testers. Haiku: read-only checks and lookups.
+- Opus: planning, complex or risky builds. Testers and critics: always Opus or above. Sonnet: clear contained builds only. Haiku: read-only checks and lookups.
 - Pass `model` to start_session (and to subagents); show model and effort on the card. Switch a running session with set_session_model when its work turns out simpler or harder than expected.
