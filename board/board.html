@@ -207,8 +207,7 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .qexplain .nt li, .plan .decn .qexplain .nt li { padding-left: 0; margin: .1em 0; }
 .plan .decn .qexplain .nt li::before { content: none; }
 .finals .whyrun { border-left-color: var(--mail); max-width: none; }
-.fchip.showdone { margin-left: 8px; border-style: dashed; }
-.fchip.showdone[aria-pressed="true"] { border-style: solid; }
+#showdone { flex: none; white-space: nowrap; }
 #sheet > header .tabs { position: sticky; bottom: 0; z-index: 1; background: var(--surface); }
 #sheet > .qbox { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; overscroll-behavior: contain; }
 #sheet .pane { min-height: 120px; }
@@ -280,7 +279,7 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .fchip[aria-pressed="true"] { background: var(--run); border-color: var(--run); color: var(--surface); font-weight: 600; }
 .fkind { flex: none; font-size: .7rem; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin-left: 8px; }
 #clear { flex: none; white-space: nowrap; }
-@media (max-width: 700px) { .fbar { flex-wrap: wrap; } #q { flex: 1 1 160px; } .fchips { order: 3; flex-basis: 100%; } }
+@media (max-width: 700px) { .fbar { flex-wrap: wrap; } #q { flex: 1 1 90px; min-width: 0; } .fchips { order: 3; flex-basis: 100%; } }
 /* Phone (card #1031, the owner 18 Nov 2026): one column at a time, a sticky switcher of every column with its count, swipe to move. Desktop unchanged. */
 #colnav { display: none; }
 @media (max-width: 700px) {
@@ -976,6 +975,7 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
   <div class="fbar" role="search">
     <input id="q" type="search" placeholder="Search cards ( / )" aria-label="Search cards by number, title, repo, label, status or next step" autocomplete="off">
     <div class="fchips" id="chips" role="group" aria-label="Filters"></div>
+    <button id="showdone" class="fchip" type="button" aria-pressed="false">Show Done</button>
     <button id="clear" class="more" type="button" disabled>Clear filters</button>
   </div>
   <nav id="colnav" aria-label="Columns"></nav>
@@ -2602,6 +2602,10 @@ let SHOW_DONE = false; try { SHOW_DONE = localStorage.getItem("boardv2.showdone"
 const inView = c => SHOW_DONE || (PENDING[c.id] ? PENDING[c.id].to : colOf(c)) !== "Done";
 const colsInView = () => COLS.filter(([n]) => SHOW_DONE || n !== "Done");
 let VIS_TOTAL = 0;
+{ // "Show Done" sits at the right of the filter bar, beside Clear filters (card #1056). Not a filter: Clear filters leaves it alone.
+  const b = $("showdone"); b.setAttribute("aria-pressed", String(SHOW_DONE));
+  b.addEventListener("click", () => { SHOW_DONE = !SHOW_DONE; b.setAttribute("aria-pressed", String(SHOW_DONE)); try { localStorage.setItem("boardv2.showdone", SHOW_DONE ? "1" : "0"); } catch (e) {} repaint(); });
+}
 function drawChips(cards) {
   const opts = KINDS.map(([key, word, get]) => { const set = new Set(F[key]); cards.filter(inView).forEach(c => [].concat(get(c)).forEach(v => { if (v) set.add(v); })); return [key, word, [...set].sort()]; });
   const sig = JSON.stringify([opts, F, SHOW_DONE]); if (sig === chipSig) return; chipSig = sig;
@@ -2618,8 +2622,6 @@ function drawChips(cards) {
     box.append(el("span", "fkind", word));
     vals.forEach(v => chip(key + ":" + v, v, F[key].includes(v), () => { F[key] = F[key].includes(v) ? F[key].filter(x => x !== v) : [...F[key], v]; }));
   });
-  chip("showdone", "Show Done", SHOW_DONE, () => { SHOW_DONE = !SHOW_DONE; try { localStorage.setItem("boardv2.showdone", SHOW_DONE ? "1" : "0"); } catch (e) {} });
-  box.lastChild.classList.add("showdone");
   const n = activeCount(F), clear = $("clear");
   clear.textContent = n ? "Clear filters (" + n + ")" : "Clear filters"; clear.disabled = !n;
   if (had) { const again = [...box.children].find(x => x.dataset.chip === had); if (again) again.focus(); }
