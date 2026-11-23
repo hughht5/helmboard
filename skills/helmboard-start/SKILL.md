@@ -355,6 +355,9 @@ missing, and a card left in Human test while its session reworked it. Follow the
 - **Human test means ready for the owner, with nothing else running.** A card is in Human test
   only when every check you or a session will run has finished and passed. Starting a tester,
   a critic or any rework on a card moves it to In progress first, in the same step.
+- **Waiting on a date goes in Blocked.** Set `waitUntil` (ISO date) and make `stuck` start
+  "WAITING (blocked on time) until <day date>: ..." so it reads as waiting, not stuck. On that
+  date, act and move it on. There is no separate Waiting column.
 - **"Archive" on the board means move to Done** (set `doneAt`). The page's Archive button only
   sends you the request.
 - **Board comments are the owner's word.** Act on them, then reply in the thread and resolve
