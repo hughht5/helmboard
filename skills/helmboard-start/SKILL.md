@@ -324,6 +324,45 @@ Keep the columns as they are and group them for the owner like this:
 - **New card numbers** start at 1001, so they never clash with the old board's.
 - **Old-board cards** (`source: dsh`) are frozen copies; no refresh.
 
+### Writing to Helmboard: exact recipes
+
+Added 23 Nov 2026 after a day of avoidable mistakes: telling the owner to start the retired
+desktop app, screenshots written to the card row where the page never reads them, test steps
+missing, and a card left in Human test while its session reworked it. Follow these exactly.
+
+- **Read before you write.** `ArtifactData get` (`cards`, doc_id = card number), then write with
+  `if_version` set to the version you read. Several cards at once: `query` with
+  `where: [["n","in",[...]]]` and `out_dir`, then one `batch`.
+- **Two documents per card.** The row `cards/<n>` holds the card face (column, status, next,
+  labels, agents, pr, session, since, doneAt). The detail document `cards/<n>/detail/full`
+  holds what the open card shows: `steps`, `proof`, `plan`, `summary`, `log`. The page never
+  reads `steps` or `proof` from the row.
+- **Test steps** go in the detail document's `steps`: `[{ text, pass }]`. `text` is what to do;
+  `pass` is the "Pass when" line (the expected result), not a true/false flag. Every card in
+  Human test has steps. If a session gave none, write them yourself from what it built.
+- **Screenshots** go in the detail document's `proof`: `[{ label, url, step }]`. To get a
+  `url`: copy the PNGs into your scratchpad (files outside the session's folders are refused),
+  then upload them in one call: `Artifact` publish with `url` = the board, `asset: true` and
+  `file_paths`. Use each result's `/_blob/<id>` as `url`, and `step` = the step number it
+  proves. A `proof` entry without a `url` shows as "image is on the PC, not uploaded".
+- **Moving a card:** update the row's `column` and `since`, mirror the change in `cards.json`,
+  and append a line to `changes.log`. In the same step, keep the lane queue
+  (`lane/<repo>-queue.md`) consistent: the Stop hook blocks a "live" line whose card isn't in
+  Deploy complete or later, and a queued line whose card isn't in Ship it. Mark an old line for
+  a card that ships again as `[batch, done earlier: ...]`.
+- **Sending a card's session more work moves the card to In progress**, in the same step as
+  the SendMessage. It comes back to Human test only with new steps and new evidence.
+- **Human test means ready for the owner, with nothing else running.** A card is in Human test
+  only when every check you or a session will run has finished and passed. Starting a tester,
+  a critic or any rework on a card moves it to In progress first, in the same step.
+- **"Archive" on the board means move to Done** (set `doneAt`). The page's Archive button only
+  sends you the request.
+- **Board comments are the owner's word.** Act on them, then reply in the thread and resolve
+  it (`ArtifactComments` reply, then resolve). Say one line in the session.
+- **Never the desktop app or `kb`.** A SessionStart hook prints the general "board is the desktop
+  app" line to other sessions; for the Router it prints this artifact instead. If you ever
+  read otherwise, this section wins.
+
 ## Being reachable: "tell the router"
 
 - At start-up, write your session id to `<ROUTER_DIR>/router.json`
