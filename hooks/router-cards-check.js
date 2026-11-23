@@ -1,5 +1,6 @@
 // Stop hook for the owner's Router: refuse to end a turn while the record contradicts the lane queues.
-// A card queued to ship (not yet live) must be in "Ship it"; a live one must be in Deploy complete or Done.
+// A card queued to ship (not yet live) must be in "Ship it"; a live one must be in Deploy complete or Done;
+// a sent-back one ("sent back: <reason>") must be In progress.
 // Added 18 Nov 2026 after #1014 was queued but left In progress. Undo: remove its Stop entry in settings.json.
 const fs = require("fs");
 const B = require("./config").dir.replace(/\\/g, "/") + "/";
@@ -10,12 +11,21 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
   if ((process.env.CLAUDE_CODE_HOST_SESSION_ID || "") !== router) process.exit(0);
   let cards = {}; try { cards = JSON.parse(fs.readFileSync(B + "cards.json", "utf8")); } catch (e) { process.exit(0); }
   const bad = [];
+  // Only each card's last line in a queue counts (a re-queued card keeps its old line as history).
+  // Sent back (card #1057): a card the lane sent back, or held for its own fault, is In progress
+  // with its session fixing it; only a shared-fault hold keeps the card in Ship it or Blocked.
   for (const f of fs.readdirSync(B + "lane").filter(f => /-queue\.md$/.test(f) && f !== "board-queue.md")) {
+    const last = {};
     for (const line of fs.readFileSync(B + "lane/" + f, "utf8").split(/\r?\n/)) {
-      const m = line.match(/^- \[([^\]]*)\]\s*#(\d+)/); if (!m) continue;
-      const state = m[1].toLowerCase(), n = m[2], card = cards[n]; if (!card || /^(batch|pending)/.test(state)) continue; // pending = approved but still being built: card stays In progress
-      const want = (/\blive\b/.test(state) && !/not live|\bred\b|\bfailed\b|rolled back/.test(state)) ? ["Deploy complete", "Final action needed", "Email customer", "Done"] : /^held/.test(state) ? ["Ship it", "Blocked"] : ["Ship it"];
-      if (!want.includes(card.column)) bad.push(`#${n} is "${m[1]}" in lane/${f} but its card is in ${card.column} (should be ${want.join(" or ")})`);
+      const m = line.match(/^- \[([^\]]*)\]\s*#(\d+)/); if (m) last[m[2]] = m[1];
+    }
+    for (const [n, st] of Object.entries(last)) {
+      const state = st.toLowerCase().trim(), card = cards[n]; if (!card || /^(batch|pending|was )/.test(state)) continue; // pending = approved but still being built: card stays In progress
+      const want = /^held: shared fault/.test(state) ? ["Ship it", "Blocked"]
+        : /^(held|sent back)/.test(state) ? ["In progress"]
+        : (/\blive\b/.test(state) && !/not live|\bred\b|\bfailed\b|rolled back/.test(state)) ? ["Deploy complete", "Final action needed", "Email customer", "Done"]
+        : ["Ship it"];
+      if (!want.includes(card.column)) bad.push(`#${n} is "${st}" in lane/${f} but its card is in ${card.column} (should be ${want.join(" or ")})` + (want[0] === "In progress" ? `; a sent-back card's queue line reads "sent back: <reason>" and its session gets the reason` : ""));
     }
   }
   for (const k of Object.values(cards)) if (k && k.column === "In progress" && !k.session) bad.push(`#${k.n} is In progress with no session working on it (give it a session or move it to Backlog)`);

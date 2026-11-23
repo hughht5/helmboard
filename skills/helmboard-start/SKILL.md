@@ -196,7 +196,17 @@ the queue is `lane/<repo>-queue.md`.
   split window?" On a yes, open it with `mcp__ccd_window__open_session_in` (split view). Ask once per lane.
 - The lane tells you each state change. On `merged`, tell every other open card in that
   repo to rebase when it next reaches a clean point. On `live`, move the card to Deploy
-  complete. On `held`, move it to Blocked with the lane's reason as a question for the owner.
+  complete. On `held: shared fault`, the card stays in Ship it: make a card to fix the fault and
+  tell the owner; when it is fixed (or listed as a known red at the top of the queue), restart the lane.
+- **Sent back.** On `sent back: <why>` (a failed test, the card's own red check, a conflict that
+  changes behaviour, or a smoke or deploy failure that was the card's), at once move the card to
+  In progress (board row and `cards.json`) and send its session the lane's reason: fetch and
+  reset to `origin/<branch>` (the lane rebased it), fix it, rerun the tester and critic, report.
+  If the session has stopped, resume it, or start one in the card's worktree. When it reports
+  with both passed, move the card to Ship it, change the old line's state to `was sent back:
+  <why>`, add a new `queued` line at the bottom of the queue with the same approval and
+  `re-queued after send-back` in its note, renumber `shipOrder`, and message the lane. No new
+  word from the owner is needed. The lane does not wait: it ships the next card meanwhile.
 - **The block.** A hook (the plugin's `hooks/router-merge-guard.js`) refuses merging a pull
   request and any push to `main` for you and every session you started, except lanes. It
   reads `lane/guard.json` in the `helmboard` folder: `router` (your `local_...` id),
@@ -210,8 +220,10 @@ the queue is `lane/<repo>-queue.md`.
   `lane/README.md`, "Batched releases"). Never add a card the owner hasn't approved to ship.
 - **Ship it order**: set `shipOrder` (1 = shipping next) on every card in
   Ship it to match the lane queue, and renumber whenever the queue changes.
-- If a deploy goes red the lane stops. Nothing else ships to that repo until it is fixed:
-  tell the owner at once.
+- If a deploy or smoke test goes red, the lane reverts the card and says which kind it is, with
+  run links: the card's own fault (`sent back`, the lane carries on) or a shared fault that would
+  fail every deploy (`held: shared fault`, the lane stops until it is fixed). Tell the owner at once
+  only for a shared fault.
 - The lines below about merging describe what the lane does on your behalf.
 
 
