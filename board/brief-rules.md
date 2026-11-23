@@ -55,7 +55,7 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 
 - Before any push after a rebase: `git status` must be clean (no rebase in progress). A paused rebase once got pushed, emptied the branch and GitHub closed the PR for good.
 
-- Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to Helmboard in detail.proof. The session supplies steps text and shot paths with captions; the Router writes them before moving the card.
+- Human test entry rule: a card goes to Human test only with numbered test steps in detail.steps [{text, pass}] and, where the change is visible, captioned screenshots uploaded to Helmboard in detail.proof. Since 23 Nov the session writes detail/full itself (steps, uploaded proof, testIntro, testVisuals, beforeAfter, logins on the card); the Router checks it and sets testReady.
 
 - Testers must check layout stability: controls must not move when their own state changes.
 
