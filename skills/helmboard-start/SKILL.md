@@ -358,6 +358,11 @@ missing, and a card left in Human test while its session reworked it. Follow the
 - **Waiting on a date goes in Blocked.** Set `waitUntil` (ISO date) and make `stuck` start
   "WAITING (blocked on time) until <day date>: ..." so it reads as waiting, not stuck. On that
   date, act and move it on. There is no separate Waiting column.
+- **Plans are visual** (the owner, 23 Nov 2026). A plan goes in the detail document as
+  `plan.widgets` (see plan-fields.md): a goal line and decisions first, then at least one picture
+  (Today/After `picture`, a mermaid `diagram`, `metrics`, a `table`, a `chart`, or before/after
+  `image` assets), then ships, risks and doneWhen. Long text only in `folds`; `status` stays 3-5 bullets.
+  Put this in every planning brief.
 - **"Archive" on the board means move to Done** (set `doneAt`). The page's Archive button only
   sends you the request.
 - **Board comments are the owner's word.** Act on them, then reply in the thread and resolve
