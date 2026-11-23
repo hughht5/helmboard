@@ -85,3 +85,8 @@ Ask the Router, never the owner. The Router answers for him within his standing 
 
 ## Test tab is never empty
 Before a card goes to Human test, its session writes detail/full `steps` [{text}], one action and its expected result each, the first step giving the stack or preview link to open. It also uploads at least one screenshot per step into `proof` [{label,url,step}]. A plain `text` blob doesn't count. The Router reads detail/full, then sets `testReady: true` in cards.json. The Stop hook refuses Human test without it.
+- The Test tab explains as well as lists. detail/full also holds:
+  - `testIntro`: two to four lines on what changed and why, taken from the plan;
+  - `testVisuals`: diagrams or flows of what's being tested, as the plan widgets do, with uploaded images;
+  - `beforeAfter` [{label, before:{url,text}, after:{url,text}}]: a before and an after screenshot or explanation for each change.
+  The Router checks for all three before it sets testReady.

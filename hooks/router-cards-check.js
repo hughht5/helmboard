@@ -37,7 +37,7 @@ let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end",
   } catch (e) {}
   // Screenshots must be uploaded (added 23 Nov 2026 after #182 showed PC paths).
   // Empty Test tab: a card in Human test needs its detail checked: steps [{text}] and uploaded screenshots. Set testReady:true in cards.json only after reading cards/<n>/detail/full.
-  for (const k of Object.values(cards)) if (k && k.column === "Human test" && !k.testReady) bad.push(`#${k.n} is in Human test without a checked Test tab: put steps [{text}] (with the stack link) and uploaded screenshots in detail/full, then set testReady:true in cards.json`);
+  for (const k of Object.values(cards)) if (k && k.column === "Human test" && !k.testReady) bad.push(`#${k.n} is in Human test without a checked Test tab: put steps [{text}] (with the stack link) and uploaded screenshots in detail/full, plus testIntro, testVisuals and beforeAfter pairs, then set testReady:true in cards.json`);
   for (const k of Object.values(cards)) if (k && k.column === "Human test" && Array.isArray(k.proof) && k.proof.some(p => typeof p === "string" || !p.url)) bad.push(`#${k.n} has screenshots that are PC paths, not uploaded: upload them as artifact assets and set proof [{label,url,step}]`);
   // Deploy complete -> post to Slack #product. Card needs slackPosted once posted.
   for (const k of Object.values(cards)) if (k && /your-app/.test(k.repo || "") && ["Deploy complete", "Final action needed", "Done"].includes(k.column) && !/^dsh/.test(k.source || "") && !k.slackPosted && !k.noSlack) bad.push(`#${k.n} is live but not posted to Slack #product (C0ALAMB66MB): post a one-line customer-facing note, then set slackPosted on the card in cards.json (or noSlack: true for internal-only work)`);
