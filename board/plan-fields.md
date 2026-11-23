@@ -75,6 +75,9 @@ Columns after Ship it: **Deploy complete** → **Final action needed** (only car
 | `plan` | object, below | The Plan tab. |
 | `tests` | `[ { who, scenario, result, note?, evidence?, fix? } ]` | The Test tab's "Already tested" block (card #1062), below. |
 | `notCovered` | `[ string ]` | The "Not covered" list at the end of "Already tested". |
+| `testIntro` | string, or `[ string ]` | "What you're testing" at the top of the Test tab (card #1085), below. |
+| `testVisuals` | `[ widget ]` | Diagrams, flows and images under the intro. |
+| `beforeAfter` | `[ { label, before: { url, text }, after: { url, text } } ]` | "Before and after" pairs. |
 
 Existing detail fields the Plan tab also uses: `summary` (last fold, and the fallback headline), `doneWhen` (the fallback headline, or the Done when sentence), `checks` / `results` (the Done when list and meter), `next` (the Next step callout, unless it starts "HOW TO TEST").
 
@@ -96,6 +99,26 @@ What the tester, critic, reviewer and CI actually checked, so the Test tab shows
 The Tested / Reviewed chips on a card face, the Tester pill in the card header and the subagents strip open the Test tab at that group. The "Plan critiqued" chip (Planning / Plan review cards) opens the Plan tab instead: `tests` holds checks of the built work, not the plan critique.
 
 On a rerun, replace that `who`'s rows with the latest report (keep a fixed finding as one row with `result: "fixed"` and `fix`), so the count stays true.
+
+### `testIntro`, `testVisuals` and `beforeAfter` (card #1085)
+
+The Test tab explains what the owner is testing before the steps. In order it shows: "What you're testing" (the intro, then the visuals), "Before and after", "Your test" (the steps), then "Already tested". On a laptop, a card with screenshots keeps them on the left and shows all of this on the right, with a "Jump to the steps" button at the top; a card without screenshots shows the explainer on the left and the steps on the right. On a phone it is one column in that order. A card with none of the three fields shows a "See the plan" button there instead, and the rest of the tab is as before.
+
+- `testIntro`: two to four lines on what changed and why, taken from the plan. A markdown string (the safe subset the `markdown` widget uses: paragraphs, lists, **bold**, *italic*, `code`, https links), or a list of strings shown as one paragraph each (a leading `- ` is dropped).
+- `testVisuals`: a list of Plan tab widgets (see "Widgets" below), drawn by the same code. Only these types: `picture`, `diagram` (mermaid or svg), `image`, `callout`, `markdown`, `table`, `metrics`, `chart`. Others are skipped. An `image` must be one of this artifact's uploads (`/_blob/<id>`).
+- `beforeAfter`: one entry per change. `label` names it. `before` and `after` are each a markdown string, or `{ url, text }` with an image `url` and/or markdown `text`. An optional `proof` (an image url) on the pair shows under it, full width. Pairs sit side by side and stack when their column is under about 520px wide (always on a phone). Images zoom like the evidence shots.
+
+Image URLs must be this artifact's own uploads, exactly `/_blob/` plus 32 lowercase hex characters, as in `proof`. Any other URL (https, data:, another host) is dropped. All text is plain text, never HTML. Links (in `markdown` widgets) are https only.
+
+Example:
+
+```json
+{
+  "testIntro": ["The Test tab now says what the tester and critic checked.", "Before, it only said 'passed'."],
+  "testVisuals": [{ "type": "diagram", "title": "Where the list comes from", "mermaid": "flowchart LR\n T[Tester report] --> R[Router] --> D[detail/full tests] --> B[Test tab]" }],
+  "beforeAfter": [{ "label": "Test tab of a passed card", "before": { "url": "/_blob/<id>", "text": "Only 'Tester passed'." }, "after": { "url": "/_blob/<id>", "text": "Each scenario with its result." } }]
+}
+```
 
 ### `plan`
 

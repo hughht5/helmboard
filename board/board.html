@@ -223,6 +223,37 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .pill.bad { background: var(--stuck); }
 .pill.na { background: var(--done); }
 .tdone .tg { scroll-margin-top: 14px; }
+/* #1085 What you're testing / Before and after */
+.tintro { display: flex; flex-direction: column; gap: 4px; max-width: 78ch; }
+.tintro p { margin: 0; font-size: .98rem; line-height: 1.55; overflow-wrap: anywhere; }
+.tvis.plan { display: flex; flex-direction: column; gap: 18px; margin-top: 12px; }
+.tvis.plan .flow { overflow-x: auto; }
+.texpl { display: flex; flex-direction: column; gap: 24px; }
+.texpl:empty { display: none; }
+.tvis h4.wsub { margin: 0 0 8px; font-size: .95rem; font-weight: 700; }
+.tojump { align-self: flex-start; font-size: .85rem; }
+.seeplan { align-self: flex-start; }
+.ba { display: flex; flex-direction: column; gap: 18px; container-type: inline-size; }
+.ba .pair > b { display: block; font-size: .92rem; margin-bottom: 6px; overflow-wrap: anywhere; }
+.ba .sides { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.ba .side { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; background: var(--surface); }
+.ba .side.before { border-top: 4px solid var(--stuck); }
+.ba .side.after { border-top: 4px solid var(--ship); }
+.ba .side .k { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ba .side button.zimg { padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: zoom-in; display: block; }
+.ba .side button.zimg img { display: block; width: 100%; max-height: 260px; object-fit: contain; border-radius: 6px; }
+.ba .side p { margin: 0; font-size: .9rem; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+@container (max-width: 520px) { .ba .sides { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .ba .sides { grid-template-columns: minmax(0, 1fr); } }
+.ba .side .wmd > :first-child { margin-top: 0; }
+.ba .side .wmd > :last-child { margin-bottom: 0; }
+.ba .side .wmd { font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
+.tintro .wmd { font-size: .98rem; line-height: 1.55; overflow-wrap: anywhere; }
+.tintro .wmd > :first-child { margin-top: 0; }
+.ba .proof { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.ba .proof .k { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ba .proof button.zimg { padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: zoom-in; display: block; max-width: 100%; }
+.ba .proof button.zimg img { display: block; max-width: 100%; max-height: 360px; object-fit: contain; border-radius: 6px; }
 .tdone .tg + .tg { margin-top: 14px; }
 .tdone .tgh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; font-size: .9rem; font-weight: 700; scroll-margin-top: 12px; }
 .tdone .tgh small { font-weight: 400; color: var(--muted); font-size: .8rem; }
@@ -1589,6 +1620,70 @@ function testsBlock(parent, f) {
   }
   s.append(wrap); return true;
 }
+// #1085 The Test tab explains: testIntro, testVisuals (plan widgets) and beforeAfter, all from detail/full.
+// Images must be this artifact's own uploads (/_blob/<id>); anything else is dropped. Text is text, never HTML.
+const assetUrl = u => typeof u === "string" && /^\/_blob\/[0-9a-f]{32}$/.test(u) ? u : "";
+const VIS_TYPES = ["picture", "diagram", "image", "callout", "markdown", "table", "metrics", "chart"];
+// testIntro: a markdown string, or a list of strings (one paragraph each). Returned as markdown source.
+function introText(f) {
+  const t = f.testIntro;
+  if (Array.isArray(t)) return t.map(txt1).map(x => x.replace(/^\s*[-*•]\s+/, "").trim()).filter(Boolean).join("\n\n");
+  return typeof t === "string" ? t.trim() : "";
+}
+function visualsOf(f) {
+  const raw = Array.isArray(f.testVisuals) ? f.testVisuals : f.testVisuals && typeof f.testVisuals === "object" ? [f.testVisuals] : [];
+  return raw.filter(w => w && typeof w === "object" && VIS_TYPES.includes(w.type) && WIDGETS[w.type] && (w.type !== "image" || assetUrl(w.url)));
+}
+function pairsOf(f) {
+  const side = x => { x = x && typeof x === "object" ? x : typeof x === "string" ? { text: x } : {}; const o = { url: assetUrl(x.url), text: txt1(x.text).trim() }; return o.url || o.text ? o : null; };
+  return (Array.isArray(f.beforeAfter) ? f.beforeAfter : []).filter(x => x && typeof x === "object")
+    .map(x => ({ label: txt1(x.label).trim(), before: side(x.before), after: side(x.after), proof: assetUrl(x.proof) })).filter(x => x.before || x.after || x.proof);
+}
+const explainsTest = f => !!(introText(f) || visualsOf(f).length || pairsOf(f).length);
+function explainBlock(parent, v) {
+  const f = v.f, intro = introText(f), vis = visualsOf(f), pairs = pairsOf(f);
+  if (intro || vis.length) {
+    const s = sec(parent, "What you're testing");
+    if (intro) { const d = el("div", "tintro"); d.append(mdRender(intro)); s.append(d); }
+    if (vis.length) {
+      const box = el("div", "tvis plan"), x = { v, c: v.c, f, list: checkList(f), qs: [], parts: [], ships: [], rich: true, met: 0 };
+      vis.forEach(w => { const slot = el("div", "wslot"); try { WIDGETS[w.type](slot, w, x); } catch (e) { slot.textContent = ""; } if (slot.children.length) box.append(slot); });
+      box.querySelectorAll(".sec > h3").forEach(h => { const h4 = el("h4", "wsub"); h4.append(...h.childNodes); h.replaceWith(h4); });
+      if (box.children.length) s.append(box);
+    }
+  }
+  if (pairs.length) {
+    const s = sec(parent, "Before and after", pairs.length + (pairs.length === 1 ? " change" : " changes")), box = el("div", "ba");
+    const shots = [];
+    pairs.forEach(P => {
+      const pair = el("div", "pair"), sides = el("div", "sides");
+      if (P.label) pair.append(el("b", "", P.label));
+      [["before", "Before"], ["after", "After"]].forEach(([k, word]) => {
+        const S = P[k], d = el("div", "side " + k); d.append(el("span", "k", word));
+        if (!S) { d.append(el("p", "", "Nothing given.")); sides.append(d); return; }
+        if (S.url) {
+          const i = shots.length, cap = (P.label ? P.label + ": " : "") + word.toLowerCase() + (S.text ? ". " + S.text.replace(/[*_`#>]/g, "").slice(0, 160) : "");
+          shots.push({ url: S.url, label: cap });
+          const b = el("button", "zimg"), img = el("img"); b.type = "button"; b.setAttribute("aria-label", "Zoom: " + cap);
+          img.src = S.url; img.alt = cap; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; b.append(img);
+          b.addEventListener("click", () => zoom(shots, i, true)); d.append(b);
+        }
+        if (S.text) d.append(mdRender(S.text));
+        sides.append(d);
+      });
+      pair.append(sides);
+      if (P.proof) {
+        const i = shots.length, cap = (P.label ? P.label + ": " : "") + "proof";
+        shots.push({ url: P.proof, label: cap });
+        const pr = el("div", "proof"), b = el("button", "zimg"), img = el("img"); b.type = "button"; b.setAttribute("aria-label", "Zoom: " + cap);
+        img.src = P.proof; img.alt = cap; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; b.append(img);
+        b.addEventListener("click", () => zoom(shots, i, true)); pr.append(el("span", "k", "Proof"), b); pair.append(pr);
+      }
+      box.append(pair);
+    });
+    s.append(box);
+  }
+}
 // Scroll the Test tab to one group once the card's detail has loaded. A card with no such group lands on its checks or test runs.
 function goGroup(v) {
   if (!v.wantGroup || V !== v) return;
@@ -1630,9 +1725,9 @@ function fitShot(img, box) {
   const set = () => { const r = img.naturalWidth / (img.naturalHeight || 1); box.classList.toggle("wide", r > 4); box.classList.toggle("tall", r < 0.3); };
   if (img.complete && img.naturalWidth) set(); else img.addEventListener("load", set);
 }
-function zoom(shots, i) {
-  const old = $("zoom"); if (old) old.remove();
-  if (V) { V.shot = i; if (V.drawEv) V.drawEv(); }
+function zoom(shots, i, own) {
+  const old = $("zoom"), opener = document.activeElement; if (old) old.remove();
+  if (V && !own) { V.shot = i; if (V.drawEv) V.drawEv(); }
   const z = el("div"); z.id = "zoom"; z.setAttribute("role", "dialog"); z.setAttribute("aria-label", "Screenshot");
   const stage = el("div", "stage"), img = el("img"); img.src = shots[i].url; img.alt = shots[i].label || ""; stage.append(img); fitShot(img, stage);
   const foot = el("div", "zfoot"), cap = el("p", "", shots[i].label || "No caption.");
@@ -1640,18 +1735,18 @@ function zoom(shots, i) {
   const prev = el("button", "", "Previous"), next = el("button", "", "Next"), shut = el("button", "", "Close");
   prev.type = next.type = shut.type = "button"; prev.style.gridArea = "prev"; next.style.gridArea = "next"; shut.style.gridArea = "shut";
   prev.disabled = next.disabled = shots.length < 2;
-  prev.addEventListener("click", () => { zoom(shots, (i + shots.length - 1) % shots.length); const b = $("zoom").querySelector("button"); if (b) b.focus(); });
-  next.addEventListener("click", () => zoom(shots, (i + 1) % shots.length));
+  prev.addEventListener("click", () => { zoom(shots, (i + shots.length - 1) % shots.length, own); const b = $("zoom").querySelector("button"); if (b) b.focus(); });
+  next.addEventListener("click", () => zoom(shots, (i + 1) % shots.length, own));
   shut.addEventListener("click", closeZoom); stage.addEventListener("click", closeZoom);
   foot.append(prev, cap, next, shut); z.append(stage, foot);
-  z.dataset.i = i; z._shots = shots; document.body.append(z); (next.disabled ? shut : next).focus();
+  z.dataset.i = i; z._shots = shots; z._own = !!own; z._from = own ? (old && old._from) || opener : null; document.body.append(z); (next.disabled ? shut : next).focus();
 }
 // Focus can be pulled out of the frame by the host after a key press, so it is put back now and again shortly after.
 function holdFocus(find) {
   const go = () => { const t = find(); if (t && t.isConnected) { try { window.focus(); } catch (e) {} t.focus({ preventScroll: true }); } };
   go(); setTimeout(go, 60); setTimeout(go, 300);
 }
-function closeZoom() { const z = $("zoom"); if (!z) return; z.remove(); holdFocus(() => document.querySelector("#sheet .stagebox") || $("close")); }
+function closeZoom() { const z = $("zoom"); if (!z) return; const from = z._from; z.remove(); holdFocus(() => (from && from.isConnected ? from : null) || document.querySelector("#sheet .stagebox") || $("close")); }
 
 function saveReview() {
   const v = V; if (!v || !DB) { if (v && v.saveEl) v.saveEl.textContent = "Not saved: the cards can't be reached."; return; }
@@ -1669,8 +1764,16 @@ function saveReview() {
 function shotsOf(f) { return (f.proof || []).map(p => typeof p === "string" ? { label: p } : p); }
 function drawTest(pane) {
   pane.classList.add("bench");
-  const v = V, ev = el("div", "ev"), todo = el("div", "todo");
+  const v = V, ev = el("div", "ev"), todo = el("div", "todo"), expl = el("div", "texpl");
   pane.append(ev, todo);
+  // Built once per draw, so step clicks (which redraw the column) don't redraw diagrams or move the steps.
+  // With no screenshots the left column is free, so the explainer reads first there (left, then the steps on the right).
+  const explLeft = explainsTest(v.f) && !shotsOf(v.f).some(p => p.url) && !PHONE.matches;
+  if (explainsTest(v.f)) {
+    if (!explLeft) { const j = el("button", "linkbtn tojump", "Jump to the steps"); j.type = "button"; j.addEventListener("click", () => { const s = todo.querySelector(":scope > .sec"); if (s) { s.scrollIntoView({ block: "start" }); const h = s.querySelector("h3"); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } } }); expl.append(j); }
+    explainBlock(expl, v);
+  }
+  else if (v.loaded) { const sp = el("button", "linkbtn seeplan", "See the plan"); sp.type = "button"; sp.title = "What this card changes, on the Plan tab"; sp.addEventListener("click", () => { v.tab = "plan"; drawPane(); const t = $("tab-plan"); if (t) t.focus(); }); expl.append(sp); }
   v.drawEv = () => {
     if (V !== v) return;
     const all = shotsOf(v.f), shots = all.filter(p => p.url), rest = all.filter(p => !p.url);
@@ -1695,6 +1798,7 @@ function drawTest(pane) {
         ev.append(film);
       }
     } else {
+      if (explLeft) ev.append(expl);
       ev.append(el("div", "label", "Evidence"));
       ev.append(el("div", "noev", v.loaded ? "No screenshots for this card. The tester's checks are below." : "Loading the evidence…"));
       checksBlock(ev, v.f);
@@ -1704,7 +1808,7 @@ function drawTest(pane) {
   v.drawTodo = focusBtn => {
     if (V !== v) return;
     const T = testData(v.c, v.f), steps = T.steps;
-    todo.replaceChildren();
+    todo.replaceChildren(...(explLeft ? [] : [expl]));
     if (!steps.some(s => s.n === v.cur)) v.cur = (steps.find(s => !v.rev[s.n]) || steps[0] || {}).n || null;
     const done = steps.filter(s => v.rev[s.n]).length;
     const s0 = sec(todo, "Your test", steps.length ? done + " of " + steps.length + " done" : "");
@@ -2515,7 +2619,7 @@ function openCard(c, wantTab, wantGroup) {
 }
 document.addEventListener("keydown", e => {
   const z = $("zoom");
-  if (z && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const s = z._shots, i = +z.dataset.i; zoom(s, (i + (e.key === "ArrowRight" ? 1 : s.length - 1)) % s.length); return; }
+  if (z && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const s = z._shots, i = +z.dataset.i; zoom(s, (i + (e.key === "ArrowRight" ? 1 : s.length - 1)) % s.length, z._own); return; }
   if (!z && $("veil") && (e.key === "ArrowRight" || e.key === "ArrowLeft") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     const t = e.target || {}; if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "") || t.isContentEditable || (t.closest && t.closest('[role="tablist"]'))) return;
     e.preventDefault(); stepCard(e.key === "ArrowRight" ? 1 : -1); return;
