@@ -43,13 +43,13 @@ step 2, and rerunning a test it thinks is flaky once (the same test, once, on th
 write `rerun flaky: <test>` in the line's note). A second red is a send-back. Anything else that
 fails is the card's to fix: `sent back`, never a fix by the lane.
 
-## Sent back
+## Sent back (card #1057)
 
 A sent-back card leaves the lane's hands at once. The Router moves it to In progress and gives
 its session the reason; the session fixes it, reruns its tester and critic, and the Router
 adds it again at the bottom of the queue. The lane never waits for it: it takes the next card.
 
-## When a deploy or smoke test fails
+## When a deploy or smoke test fails (card #1057)
 
 1. Cancel the queued Deploy run for the next card, if there is one (`gh run cancel`).
 2. Revert the broken card's merge on main with a revert commit through a PR, so main matches
