@@ -222,6 +222,26 @@ section.you { background: color-mix(in srgb, var(--c) 16%, transparent); }
 .pill.ok { background: var(--ship); }
 .pill.bad { background: var(--stuck); }
 .pill.na { background: var(--done); }
+.tdone .tg { scroll-margin-top: 14px; }
+.tdone .tg + .tg { margin-top: 14px; }
+.tdone .tgh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; font-size: .9rem; font-weight: 700; scroll-margin-top: 12px; }
+.tdone .tgh small { font-weight: 400; color: var(--muted); font-size: .8rem; }
+.tdone .tgh:focus { outline: none; }
+.tg.flash, .sec.flash { animation: tgflash 1.6s ease-out 1; border-radius: 8px; }
+@keyframes tgflash { 0% { box-shadow: 0 0 0 3px var(--test); } 100% { box-shadow: 0 0 0 3px transparent; } }
+.tdone .check .scen { font-weight: 600; }
+.tdone .check .tnote, .tdone .check .tfix, .tdone .check .tev { display: block; margin-top: 3px; font-size: .88rem; }
+.tdone .check .tfix { color: var(--ship); }
+.tdone .check .tev { color: var(--muted); font-size: .8rem; }
+.tdone .notcov { margin: 0; padding-left: 1.2em; font-size: .92rem; line-height: 1.5; max-width: 80ch; }
+.tdone .notcov li { overflow-wrap: anywhere; }
+button.chip.golink { font: inherit; cursor: pointer; background: transparent; line-height: inherit; }
+.facts button.pill.golink { font-family: inherit; cursor: pointer; border: 0; font-size: .72rem; font-weight: 700; letter-spacing: .05em; }
+button.agent.golink { font: inherit; color: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; }
+button.agent.golink.warn { background: color-mix(in srgb, var(--test) 9%, transparent); }
+.agents > .agent + .agent { border-left: 1px solid var(--line); }
+.golink:hover { text-decoration: underline; }
+.golink:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
 .runs { display: flex; flex-direction: column; border-left: 2px solid var(--line); margin-left: 6px; }
 .run { position: relative; padding: 0 0 18px 20px; display: flex; flex-direction: column; gap: 6px; }
 .run::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--dot, var(--done)); border: 2px solid var(--surface); box-sizing: border-box; }
@@ -1184,13 +1204,21 @@ const WAITING = ["Plan review", "Human test", "Blocked"];
 // (card #1030); rows still saying that are read as this column.
 const FINAL = "Final action needed", OLD_FINAL = "Email customer";
 const AGENT_WORD = { passed: "passed", failed: "failed", unclear: "unclear", fixed: "fix proved", reproduced: "reproduced", "not-reproduced": "not reproduced" };
+// #1062 A tester / critic / reviewer chip opens the card's Test tab at that group of "Already tested".
+function goChip(c, who, cls, text) {
+  // A plan critique lives on the Plan tab; every other chip opens the Test tab at its group.
+  const b = el("button", cls + " golink", text); b.type = "button"; b.title = who === "plan" ? "Show the critiqued plan" : "Show what the " + who + " checked";
+  b.addEventListener("click", e => { e.stopPropagation(); if (who === "plan") openCard(c, "plan"); else openCard(c, "test", who); });
+  ["keydown", "pointerdown", "mousedown"].forEach(t => b.addEventListener(t, e => e.stopPropagation()));
+  return b;
+}
 function labels(meta, c) {
   (c.labels || []).forEach(l => { const t = el("span", "chip tag", l); let h = 0; for (const ch of String(l)) h = (h * 31 + ch.charCodeAt(0)) % 360; t.style.setProperty("--h", h); meta.append(t); });
   const t = c.agents && c.agents.tester;
-  if (t) meta.append(el("span", "chip " + (t === "passed" ? "ok" : "bad"), t === "passed" ? "Tested" : "Test " + (AGENT_WORD[t] || t)));
+  if (t) meta.append(goChip(c, "tester", "chip " + (t === "passed" ? "ok" : "bad"), t === "passed" ? "Tested" : "Test " + (AGENT_WORD[t] || t)));
   const a = c.agents || {}, bad = r => !["passed", "fixed", "reproduced"].includes(r);
-  if (a.reviewer && c.column === "Human test") meta.append(el("span", "chip " + (bad(a.reviewer) ? "bad" : "ok"), a.reviewer === "passed" ? "Reviewed" : "Review " + (AGENT_WORD[a.reviewer] || a.reviewer)));
-  if (a.critic && ["Planning", "Plan review"].includes(c.column)) meta.append(el("span", "chip " + (bad(a.critic) ? "bad" : "ok"), a.critic === "passed" ? "Plan critiqued" : "Critique " + (AGENT_WORD[a.critic] || a.critic)));
+  if (a.reviewer && c.column === "Human test") meta.append(goChip(c, "reviewer", "chip " + (bad(a.reviewer) ? "bad" : "ok"), a.reviewer === "passed" ? "Reviewed" : "Review " + (AGENT_WORD[a.reviewer] || a.reviewer)));
+  if (a.critic && ["Planning", "Plan review"].includes(c.column)) meta.append(goChip(c, "plan", "chip " + (bad(a.critic) ? "bad" : "ok"), a.critic === "passed" ? "Plan critiqued" : "Critique " + (AGENT_WORD[a.critic] || a.critic)));
   if (a.reproducer && (c.labels || []).includes("BUG")) meta.append(el("span", "chip " + (bad(a.reproducer) ? "bad" : "ok"), a.reproducer === "fixed" ? "Fix proved" : "Bug " + (AGENT_WORD[a.reproducer] || a.reproducer)));
   if (c.goTo === "all the way") meta.append(el("span", "chip", "all the way"));
   if (WAITING.includes(c.column) && c.since) {
@@ -1514,6 +1542,67 @@ function checksBlock(parent, f, tight) {
   });
   s.append(box);
 }
+// #1062 "Already tested": detail/full `tests` [{who, scenario, result, note, evidence, fix}] and `notCovered` [text].
+const TEST_WHO = ["tester", "critic", "reviewer", "reproducer", "ci"], WHO_WORD = { tester: "Tester", critic: "Critic", reviewer: "Reviewer", reproducer: "Reproducer", ci: "CI" };
+const RESULT_WORD = { pass: "Pass", passed: "Pass", met: "Pass", fail: "Fail", failed: "Fail", fixed: "Fixed", unclear: "Unclear", skipped: "Skipped" };
+const GOOD_RESULT = ["pass", "passed", "met", "fixed"];
+const txt1 = x => x == null ? "" : typeof x === "string" ? x : typeof x === "number" ? String(x) : "";
+function testsOf(f) {
+  const t = Array.isArray(f.tests) ? f.tests.filter(x => x && typeof x === "object" && (txt1(x.scenario) || txt1(x.note))) : [];
+  const nc = (Array.isArray(f.notCovered) ? f.notCovered : f.notCovered ? [f.notCovered] : []).map(txt1).filter(x => x.trim());
+  return { t, nc };
+}
+function testsBlock(parent, f) {
+  const { t, nc } = testsOf(f);
+  if (!t.length && !nc.length) return false;
+  const groups = {};
+  t.forEach(x => { const w = txt1(x.who).toLowerCase().trim() || "other"; (groups[w] = groups[w] || []).push(x); });
+  const rank = w => TEST_WHO.indexOf(w) < 0 ? 99 : TEST_WHO.indexOf(w);
+  const names = Object.keys(groups).sort((a, b) => rank(a) - rank(b));
+  const okOf = rows => rows.filter(x => GOOD_RESULT.includes(txt1(x.result).toLowerCase())).length;
+  const s = sec(parent, "Already tested", t.length ? okOf(t) + " of " + t.length + " passed" : ""), wrap = el("div", "tdone");
+  names.forEach(w => {
+    const rows = groups[w], g = el("div", "tg"); g.dataset.tg = w;
+    const h = el("h4", "tgh", WHO_WORD[w] || (w[0].toUpperCase() + w.slice(1))); h.tabIndex = -1; h.append(el("small", "", okOf(rows) + " of " + rows.length + " passed"));
+    const box = el("div", "checks");
+    rows.forEach(x => {
+      const r = txt1(x.result).toLowerCase().trim(), word = RESULT_WORD[r] || (r ? r[0].toUpperCase() + r.slice(1) : "Not run");
+      const cls = GOOD_RESULT.includes(r) ? "ok" : ["fail", "failed"].includes(r) ? "bad" : "na";
+      const row = el("div", "check"), body = el("div");
+      if (txt1(x.scenario)) body.append(el("span", "scen", txt1(x.scenario)));
+      if (txt1(x.note)) body.append(el("span", "tnote", txt1(x.note)));
+      if (txt1(x.fix)) body.append(el("span", "tfix", "Fixed: " + txt1(x.fix)));
+      const ev = txt1(x.evidence);
+      if (ev) {
+        const e = el("span", "tev", "Evidence: ");
+        if (/^https:\/\/\S+$/.test(ev)) { const a = el("a", "", ev); a.href = ev; a.target = "_blank"; a.rel = "noopener noreferrer"; e.append(a); } else e.append(ev);
+        body.append(e);
+      }
+      row.append(el("span", "pill " + cls, word), body); box.append(row);
+    });
+    g.append(h, box); wrap.append(g);
+  });
+  if (nc.length) {
+    const g = el("div", "tg"); g.dataset.tg = "notcovered";
+    const h = el("h4", "tgh", "Not covered"); h.tabIndex = -1; const ul = el("ul", "notcov");
+    nc.forEach(x => ul.append(el("li", "", x))); g.append(h, ul); wrap.append(g);
+  }
+  s.append(wrap); return true;
+}
+// Scroll the Test tab to one group once the card's detail has loaded. A card with no such group lands on its checks or test runs.
+function goGroup(v) {
+  if (!v.wantGroup || V !== v) return;
+  if (v.tab !== "test") { v.wantGroup = null; return; }
+  if (!v.loaded) return;
+  const who = v.wantGroup; v.wantGroup = null;
+  const g = v.pane.querySelector('.tg[data-tg="' + who + '"]') || v.pane.querySelector(".tdone") || (v.pane.querySelector(".runs, .checks") || {}).parentElement;
+  if (!g) return;
+  g.scrollIntoView({ block: "start" });
+  // Leave focus alone if the owner is typing (the question box or the note) by the time the detail arrives.
+  const a = document.activeElement, typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  const h = g.querySelector(".tgh") || g.querySelector("h3"); if (h && !typing) { if (h.tagName !== "H4") h.tabIndex = -1; h.focus({ preventScroll: true }); }
+  g.classList.add("flash"); setTimeout(() => g.classList.remove("flash"), 1700);
+}
 function runsBlock(parent, f) {
   const runs = (f.verdicts || []).filter(v => !/marked the checks/.test(v)).map(v => {
     const m = String(v).match(/^(\d{4}-\d\d-\d\d[ T]\d\d:\d\d)\s+([\s\S]*)$/), rest = m ? m[2] : String(v);
@@ -1662,6 +1751,7 @@ function drawTest(pane) {
       todo.append(notes);
     }
     if (shotsOf(v.f).some(p => p.url)) checksBlock(todo, v.f, true);
+    if (!testsBlock(todo, v.f)) runsBlock(todo, v.f);
     if (focusBtn && focusMe) focusMe.focus();
   };
   v.drawEv(); v.drawTodo();
@@ -1716,7 +1806,8 @@ function drawFacts() {
   const state = (f.testRun && f.testRun.state) || (c.agents && c.agents.tester);
   if (state) {
     const list = checkList(f), tried = list.some(r => r.state);
-    box.append(el("span", "pill " + (state === "passed" ? "ok" : "bad"), "Tester " + (AGENT_WORD[state] || state) + (tried ? " " + list.filter(r => r.state === "met").length + " of " + list.length : "")));
+    const tp = el("button", "pill golink " + (state === "passed" ? "ok" : "bad"), "Tester " + (AGENT_WORD[state] || state) + (tried ? " " + list.filter(r => r.state === "met").length + " of " + list.length : ""));
+    tp.type = "button"; tp.title = "Show what the tester checked"; tp.addEventListener("click", () => showGroup("tester")); box.append(tp);
   }
   if (WAITING.includes(c.column) && c.since) {
     const days = Math.floor((Date.now() - Date.parse(c.since)) / 864e5);
@@ -1783,13 +1874,16 @@ function drawAgents() {
   box.append(el("div", "lead", "Subagents"));
   names.forEach(name => {
     const r = ran[name], good = ["passed", "fixed", "reproduced"].includes(r);
-    const a = el("div", "agent" + (r ? good ? " ok" : " warn" : ""));
+    const can = ["tester", "critic", "reviewer", "reproducer"].includes(name);
+    const a = el(can ? "button" : "div", "agent" + (r ? good ? " ok" : " warn" : "") + (can ? " golink" : ""));
+    if (can) { a.type = "button"; a.addEventListener("click", () => showGroup(name)); }
     const word = r ? AGENT_WORD[r] || String(r) : "Not run yet";
     a.append(el("span", "dot", r ? good ? "✓" : "!" : "–"), el("b", "", name[0].toUpperCase() + name.slice(1)), el("span", "r", notes[name] ? String(notes[name]) : word[0].toUpperCase() + word.slice(1)));
     a.title = name + ": " + (notes[name] || word);
     box.append(a);
   });
 }
+function showGroup(who) { const v = V; if (!v) return; v.tab = "test"; v.wantGroup = who; drawPane(); goGroup(v); }
 // One question's controls: a button per option, a free-text answer and what was sent. Used above the tabs and in the Plan tab.
 const qStamp = q => String(q.askedAt || "") + "|" + q.text;
 // "What this is about": a question's `explain` ("- " lines, or a list), shown above its options. Text only.
@@ -2356,7 +2450,7 @@ function stepCard(d) {
   if (j < 0 || j >= p.list.length) { const h = $("cardpos"); if (h) { h.textContent = d > 0 ? "Last card in " + p.name : "First card in " + p.name; h.classList.add("end"); setTimeout(() => { if (h.isConnected) { h.classList.remove("end"); h.textContent = (p.i + 1) + " of " + p.list.length + " in " + p.name; } }, 1400); } return; }
   const keep = shown; openCard(p.list[j], v.tab); shown = keep;
 }
-function openCard(c, wantTab) {
+function openCard(c, wantTab, wantGroup) {
   const fromBtn = document.activeElement && /^card(next|prev)$/.test(document.activeElement.id) ? document.activeElement.id : "";
   const v0 = $("veil"); if (v0) v0.remove(); const z0 = $("zoom"); if (z0) z0.remove();
   shown = document.activeElement;
@@ -2372,7 +2466,8 @@ function openCard(c, wantTab) {
   if (c.column === "Blocked") names.unshift(["needs", "What it needs"]);
   let first = ["Human test", "Deploy complete"].includes(c.column) ? "test" : c.column === "Blocked" ? "needs" : "plan";
   if (wantTab && names.some(x => x[0] === wantTab)) first = wantTab;
-  const v = V = { c, f: {}, loaded: !DB, rev: {}, cur: null, shot: 0, tab: first, facts, tabs, pane, qbox: el("div", "qbox"), agentsEl: el("div", "agents"), qSent: {}, qOpen: {}, touched: 0, saveMsg: "" };
+  const wantG = first === "test" ? wantGroup || null : null;
+  const v = V = { c, f: {}, loaded: !DB, rev: {}, cur: null, shot: 0, tab: first, facts, tabs, pane, qbox: el("div", "qbox"), agentsEl: el("div", "agents"), qSent: {}, qOpen: {}, touched: 0, saveMsg: "", wantGroup: wantG };
   names.forEach(([id, word]) => {
     const t = el("button", "tab", word); t.type = "button"; t.id = "tab-" + id; t.dataset.tab = id; t.setAttribute("role", "tab");
     t.addEventListener("click", () => { v.tab = id; drawPane(); });
@@ -2402,14 +2497,15 @@ function openCard(c, wantTab) {
   sheet.addEventListener("scroll", touch, true);
   drawFacts(); drawQuestion(); drawPane();
   { const fb = fromBtn && $(fromBtn); (fb && !fb.disabled ? fb : fromBtn ? (fromBtn === "cardnext" ? prevB : nextB) : close).focus(); }
+  goGroup(v);
   close.addEventListener("click", () => { const z = $("zoom"); if (z) z.remove(); closeCard(); });
   veil.addEventListener("click", e => { if (e.target === veil) close.click(); });
   if (!DB) return;
   DB.doc("cards/" + c.id + "/detail/full").get().then(snap => {
     if (V !== v) return;
     v.loaded = true; if (snap.exists) v.f = snap.data() || {};
-    keepState(v, () => { drawFacts(); drawPane(); });
-  }).catch(() => { if (V === v) { v.loaded = true; keepState(v, drawPane); } });
+    keepState(v, () => { drawFacts(); drawPane(); }); goGroup(v);
+  }).catch(() => { if (V === v) { v.loaded = true; keepState(v, drawPane); goGroup(v); } });
   DB.doc("cards/" + c.id + "/review/owner").get().then(snap => {
     if (V !== v || !snap.exists) return;
     const saved = (snap.data() || {}).steps || {};

@@ -73,8 +73,29 @@ Columns after Ship it: **Deploy complete** → **Final action needed** (only car
 |---|---|---|
 | `agentNotes` | `{ critic: "Passed, 8 notes", tester: "After the build" }` | One short line per subagent on the strip. A name here that is not in the card's `agents` shows as not run yet. |
 | `plan` | object, below | The Plan tab. |
+| `tests` | `[ { who, scenario, result, note?, evidence?, fix? } ]` | The Test tab's "Already tested" block (card #1062), below. |
+| `notCovered` | `[ string ]` | The "Not covered" list at the end of "Already tested". |
 
 Existing detail fields the Plan tab also uses: `summary` (last fold, and the fallback headline), `doneWhen` (the fallback headline, or the Done when sentence), `checks` / `results` (the Done when list and meter), `next` (the Next step callout, unless it starts "HOW TO TEST").
+
+### `tests` and `notCovered` (card #1062)
+
+What the tester, critic, reviewer and CI actually checked, so the Test tab shows more than "passed". The Router writes it at every hand-over from the tester's and critic's reports. Not backfilled: a card without it shows the older checks and Test runs blocks instead.
+
+| Field | Shape | Notes |
+|---|---|---|
+| `who` | `"tester"` \| `"critic"` \| `"reviewer"` \| `"reproducer"` \| `"ci"` | The group. Shown in that order; any other word makes its own group at the end. |
+| `scenario` | string | What was tried, in a line. |
+| `result` | `"pass"` \| `"fail"` \| `"fixed"` \| `"unclear"` \| `"skipped"` | The pill. `pass` and `fixed` count as passed. |
+| `note` | string | What was seen. |
+| `evidence` | string | A path or an `https://` link (links open in a new tab). |
+| `fix` | string | Critic or tester finding: what was changed to fix it. Shown as "Fixed: …". |
+
+`notCovered` lists what nobody tested, one line each. All text is plain, never HTML.
+
+The Tested / Reviewed chips on a card face, the Tester pill in the card header and the subagents strip open the Test tab at that group. The "Plan critiqued" chip (Planning / Plan review cards) opens the Plan tab instead: `tests` holds checks of the built work, not the plan critique.
+
+On a rerun, replace that `who`'s rows with the latest report (keep a fixed finding as one row with `result: "fixed"` and `fix`), so the count stays true.
 
 ### `plan`
 
