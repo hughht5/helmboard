@@ -385,6 +385,10 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 .testlinks { display: flex; flex-wrap: wrap; gap: 8px; }
 .linkbtn.stack, .linkbtn.login { font-weight: 600; border-color: color-mix(in srgb, var(--run) 50%, var(--line)); }
 .linkbtn.stack::before, .linkbtn.login::before { content: "↗ "; }
+/* #1081 card links; LIVE = not this PC */
+.linkbtn.cardlink { display: inline-flex; align-items: center; gap: 6px; overflow-wrap: anywhere; max-width: 100%; }
+.linkbtn.cardlink.live { border-color: var(--stuck); }
+.livebadge { font-size: .62rem; font-weight: 800; letter-spacing: .08em; line-height: 1; padding: 3px 5px; border-radius: 3px; background: #b3261e; color: #fff; flex: none; }
 .qopt.chosen { border: 2px solid var(--ship); background: color-mix(in srgb, var(--ship) 12%, var(--surface)); }
 .qopt.chosen:disabled, .plan .decn .qopt.chosen:disabled, .qbox .qopt.chosen:disabled { opacity: 1; color: var(--fg); }
 .qopt .pick { color: var(--ship); font-weight: 700; font-size: .78rem; }
@@ -1592,6 +1596,29 @@ function loginLinks(c) {
   }).filter(Boolean);
 }
 /* logins:end */
+// #1081 Links on a card: links: [{label, url}]. Only localhost and 127.0.0.1 are this PC's test stack;
+// any other host (platform.Acme.ai and the like) is a live site and gets a LIVE badge.
+// A link carrying a user name, password or token is not shown: no sign-in links or tokens on the board.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
+const TOKENISH = /[?&#](access_token|id_token|token|code|key|secret|password|passwd|sig|signature|auth)=/i;
+function linkUrl(raw) {
+  try { const u = new URL(String(raw || "")); return /^https?:$/.test(u.protocol) && !u.username && !u.password && !TOKENISH.test(u.search + u.hash) ? u : null; } catch (e) { return null; }
+}
+const isLocalUrl = u => LOCAL_HOSTS.includes(u.hostname);
+function cardLinks(c, f) {
+  const seen = new Set(), out = [];
+  [...(Array.isArray(c && c.links) ? c.links : []), ...(Array.isArray(f && f.links) ? f.links : [])].forEach(L => {
+    const u = L && linkUrl(L.url); if (!u || seen.has(u.href) || out.length >= 8) return; seen.add(u.href);
+    out.push({ url: u.href, host: u.host, live: !isLocalUrl(u), label: String(L.label || u.host).trim().slice(0, 60) || u.host });
+  });
+  return out;
+}
+function linkBtn(text, url, live, host) {
+  const a = el("a", "linkbtn cardlink" + (live ? " live" : ""), text); a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.title = host + (live ? " · a live site, not a test stack" : " · on this PC");
+  if (live) { const b = el("span", "livebadge", "LIVE"); b.setAttribute("aria-hidden", "true"); a.append(b); a.setAttribute("aria-label", text + " (live site)"); }
+  return a;
+}
 function testData(c, f) {
   const text = c.how || f.how || [f.next, c.next].find(isHow) || "", T = parseHow(text);
   if (Array.isArray(f.steps) && f.steps.length) T.steps = f.steps.map((s, i) => typeof s === "string" ? { n: String(i + 1), text: s, pass: "" } : { n: String(i + 1), text: String(s.text || ""), pass: String(s.pass || "") });
@@ -1894,7 +1921,12 @@ function drawTest(pane) {
     const logins = loginLinks(v.c), hasStack = /^https?:\/\//.test(T.stack || "");
     if (hasStack || logins.length) {
       const row = el("div", "testlinks");
-      if (hasStack) { const a = el("a", "linkbtn stack", "Open test stack"); a.href = T.stack; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = T.stack; row.append(a); }
+      if (hasStack) {
+        // #1081 "Open test stack" is only for this PC (localhost, 127.0.0.1); any other host is a live site.
+        const u = linkUrl(T.stack);
+        if (u && isLocalUrl(u)) { const a = el("a", "linkbtn stack", "Open test stack"); a.href = u.href; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = u.href; row.append(a); }
+        else if (u) row.append(linkBtn("Open " + u.host, u.href, true, u.host));
+      }
       logins.forEach(L => { const a = el("a", "linkbtn login", "Open as " + L.label); a.href = L.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = (L.persona ? L.persona + " · " : "") + L.host; row.append(a); });
       s0.append(row);
     }
@@ -2005,6 +2037,7 @@ function drawFacts() {
   const links = el("div", "links"), link = (text, href) => { const a = el("a", "linkbtn", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; links.append(a); };
   const is = issueOf(c.issue || f.issue); if (is && /^https:\/\//.test(is.url || "")) link(is.n ? "Issue #" + is.n : "Issue", is.url);
   const pr = prOf(c); if (pr && pr.url) link(pr.n ? "PR #" + pr.n : "PR", pr.url);
+  cardLinks(c, f).forEach(L => links.append(linkBtn("Open " + L.label, L.url, L.live, L.host)));
   if (c.session) { const go = el("button", "linkbtn", "Open session"); go.type = "button"; go.addEventListener("click", () => ask(c, "open this card's session beside you.", V.said)); links.append(go); }
   if (c.column !== "Done") {
     // Archive asks first, then sends the Router one message. The page never moves the card itself.
