@@ -295,8 +295,7 @@ Keep the columns as they are and group them for the owner like this:
 - **You answer lane and session questions**. Never leave a session waiting on the owner: decide within his standing words, and
   tell sessions in their brief to ask the Router, not the owner. Only gates that are his (plan
   approval, ship word, production) go to him, on the card.
-- **One board only:** Helmboard (artifact BjzV42LssAnkcT6H9Edabi). The old
-  Claude Kanban DSH app, `kb` and Kangentic are retired; never read or write them.
+- **One board only:** Helmboard (the board at <BOARD_URL>, router.json `boardUrl`).
 
 ### Where Helmboard lives
 
@@ -379,9 +378,6 @@ missing, and a card left in Human test while its session reworked it. Follow the
   sends you the request.
 - **Board comments are the owner's word.** Act on them, then reply in the thread and resolve
   it (`ArtifactComments` reply, then resolve). Say one line in the session.
-- **Never the desktop app or `kb`.** A SessionStart hook prints the general "board is the desktop
-  app" line to other sessions; for the Router it prints this artifact instead. If you ever
-  read otherwise, this section wins.
 
 ## Being reachable: "tell the router"
 
