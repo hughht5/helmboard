@@ -1718,7 +1718,7 @@ function pairsOf(f) {
     .map(x => ({ label: txt1(x.label).trim(), before: side(x.before), after: side(x.after), proof: assetUrl(x.proof) })).filter(x => x.before || x.after || x.proof);
 }
 const explainsTest = f => !!(introText(f) || visualsOf(f).length || pairsOf(f).length);
-function explainBlock(parent, v) {
+function testExplainBlock(parent, v) {
   const f = v.f, intro = introText(f), vis = visualsOf(f), pairs = pairsOf(f);
   if (intro || vis.length) {
     const s = sec(parent, "What you're testing");
@@ -1849,7 +1849,7 @@ function drawTest(pane) {
   const explLeft = explainsTest(v.f) && !shotsOf(v.f).some(p => p.url) && !PHONE.matches;
   if (explainsTest(v.f)) {
     if (!explLeft) { const j = el("button", "linkbtn tojump", "Jump to the steps"); j.type = "button"; j.addEventListener("click", () => { const s = todo.querySelector(":scope > .sec"); if (s) { s.scrollIntoView({ block: "start" }); const h = s.querySelector("h3"); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } } }); expl.append(j); }
-    explainBlock(expl, v);
+    testExplainBlock(expl, v);
   }
   else if (v.loaded) { const sp = el("button", "linkbtn seeplan", "See the plan"); sp.type = "button"; sp.title = "What this card changes, on the Plan tab"; sp.addEventListener("click", () => { v.tab = "plan"; drawPane(); const t = $("tab-plan"); if (t) t.focus(); }); expl.append(sp); }
   v.drawEv = () => {
@@ -1878,7 +1878,7 @@ function drawTest(pane) {
     } else {
       if (explLeft) ev.append(expl);
       ev.append(el("div", "label", "Evidence"));
-      ev.append(el("div", "noev", v.loaded ? "No screenshots for this card. The tester's checks are below." : "Loading the evidence…"));
+      ev.append(el("div", "noev", v.loaded ? (v.loadErr || "No screenshots for this card. The tester's checks are below.") : "Loading the evidence…"));
       checksBlock(ev, v.f);
     }
     if (rest.length) { const ul = el("ul", "loglist"); rest.forEach(p => ul.append(el("li", "", p.label + " (image is on the PC, not uploaded)"))); ev.append(ul); }
@@ -1899,7 +1899,7 @@ function drawTest(pane) {
       s0.append(row);
     }
     if (T.intro) { const h = el("div", "hint"); String(T.intro).split(/(https?:\/\/[^\s,)]+)/).forEach((p, i) => { if (i % 2) { const u = p.replace(/[.;:]+$/, ""), a = el("a", "", u); a.href = u; a.target = "_blank"; a.rel = "noopener"; h.append(a, p.slice(u.length)); } else if (p) h.append(p); }); s0.append(h); }
-    if (!steps.length) s0.append(el("p", "prose", v.loaded ? "No test steps are written for this card. The Plan tab says what it is." : "Loading…"));
+    if (!steps.length) s0.append(el("p", "prose", v.loaded ? (v.loadErr ? v.loadErr + " The Plan tab says what the card is." : "No test steps are written for this card. The Plan tab says what it is.") : "Loading…"));
     const box = el("div", "steps"); let focusMe = null;
     steps.forEach(s => {
       const st = v.rev[s.n], cur = v.cur === s.n;
@@ -1972,6 +1972,13 @@ function drawHistory(p) {
   if (!p.children.length) prose(p, V.loaded ? "No history yet." : "Loading…");
 }
 const PANES = { test: drawTest, needs: drawNeeds, plan: drawPlan, history: drawHistory, details: p => factsBlock(p, V.c, V.f) };
+// Draw part of the open card; if it throws, say so in the pane rather than leave it half drawn (card #1108).
+function safeDraw(v, fn) {
+  try { fn(); } catch (e) {
+    console.warn("card draw failed", e);
+    if (V === v && v.pane) { v.pane.querySelectorAll(".drawerr").forEach(x => x.remove()); const p = el("p", "prose drawerr", "Part of this card couldn't be shown (" + (e && e.message ? String(e.message).slice(0, 120) : "error") + "). Close still works."); p.setAttribute("role", "alert"); v.pane.prepend(p); }
+  }
+}
 function drawPane() {
   const v = V, p = v.pane; v.drawEv = v.drawTodo = null; v.saveEl = null;
   p.className = "pane"; p.replaceChildren(); p.scrollTop = 0;
@@ -2677,17 +2684,21 @@ function openCard(c, wantTab, wantGroup) {
   const touch = () => { v.touched = Date.now(); };
   ["pointerdown", "keydown", "input", "wheel", "focusin", "touchstart"].forEach(t => sheet.addEventListener(t, touch, true));
   sheet.addEventListener("scroll", touch, true);
-  drawFacts(); drawQuestion(); drawPane();
-  { const fb = fromBtn && $(fromBtn); (fb && !fb.disabled ? fb : fromBtn ? (fromBtn === "cardnext" ? prevB : nextB) : close).focus(); }
-  goGroup(v);
+  // Wire Close first, so a drawing error can never leave the window stuck open (card #1108).
   close.addEventListener("click", () => { const z = $("zoom"); if (z) z.remove(); closeCard(); });
   veil.addEventListener("click", e => { if (e.target === veil) close.click(); });
+  safeDraw(v, drawFacts); safeDraw(v, drawQuestion); safeDraw(v, drawPane);
+  { const fb = fromBtn && $(fromBtn); (fb && !fb.disabled ? fb : fromBtn ? (fromBtn === "cardnext" ? prevB : nextB) : close).focus(); }
+  goGroup(v);
   if (!DB) return;
+  // No detail doc: an empty Test tab that says so. A failed or slow read (10 s): say that, never "Loading…" for ever.
+  const gave = why => { if (V !== v || v.loaded) return; v.loaded = true; v.loadErr = why; safeDraw(v, drawFacts); safeDraw(v, () => keepState(v, drawPane)); goGroup(v); };
+  const slow = setTimeout(() => gave("The test details didn't load (no answer after 10 seconds). Close and open the card to try again."), 10000);
   DB.doc("cards/" + c.id + "/detail/full").get().then(snap => {
-    if (V !== v) return;
-    v.loaded = true; if (snap.exists) v.f = snap.data() || {};
-    keepState(v, () => { drawFacts(); drawPane(); }); goGroup(v);
-  }).catch(() => { if (V === v) { v.loaded = true; keepState(v, drawPane); goGroup(v); } });
+    clearTimeout(slow); if (V !== v || v.loaded) return;
+    v.loaded = true; if (snap && snap.exists) v.f = snap.data() || {}; else v.loadErr = "No test details have been written for this card yet.";
+    safeDraw(v, drawFacts); safeDraw(v, () => keepState(v, drawPane)); goGroup(v);
+  }).catch(e => { clearTimeout(slow); gave("The test details couldn't be read (" + (e && e.code || "error") + "). Close and open the card to try again."); });
   DB.doc("cards/" + c.id + "/review/owner").get().then(snap => {
     if (V !== v || !snap.exists) return;
     const saved = (snap.data() || {}).steps || {};
