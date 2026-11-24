@@ -3,7 +3,7 @@
 // a sent-back one ("sent back: <reason>") must be In progress.
 // Added 18 Nov 2026 after #1014 was queued but left In progress. Undo: remove its Stop entry in settings.json.
 const fs = require("fs");
-const B = require("./config").dir.replace(/\\/g, "/") + "/";
+const B = "~/helmboard/";
 let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end", () => {
   let input = {}; try { input = JSON.parse(raw || "{}"); } catch (e) {}
   if (input.stop_hook_active) process.exit(0);

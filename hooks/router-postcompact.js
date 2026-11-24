@@ -2,7 +2,7 @@
 // Only acts in the Router session named in helmboard/router.json. Added 18 Nov 2026.
 // Undo: remove this file's entry from PostCompact in ~/.claude/settings.json.
 const fs = require("fs");
-const B = require("./config").dir.replace(/\\/g, "/") + "/";
+const B = "~/helmboard/";
 let raw = ""; process.stdin.on("data", d => (raw += d)); process.stdin.on("end", () => {
   let router = "";
   try { router = JSON.parse(fs.readFileSync(B + "router.json", "utf8")).session; } catch (e) { process.exit(0); }

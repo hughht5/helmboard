@@ -300,15 +300,15 @@ Keep the columns as they are and group them for the owner like this:
 ### Where Helmboard lives
 
 - **The page:** <BOARD_URL> (private to the owner). Its
-  source is `<ROUTER_DIR>/board.html`. Republish only to change the
+  source is `~/helmboard/board.html`. Republish only to change the
   design (pass the URL as `url`); publishes are capped at about 200 a day.
 - **The cards:** rows in the page's database, collection `cards`, document id = card
   number. Write them with the `ArtifactData` tool (load it with ToolSearch): `update` for
   a change, `set` for a new card, `batch` for more than two. Pin each write with the
   `version` you last read. Card updates are row writes, never a republish.
-- **The record:** `<ROUTER_DIR>/cards.json` (a git repo). Write the same
+- **The record:** `~/helmboard/cards.json` (a git repo). Write the same
   change there first and commit it. If the page is ever lost or refuses writes, rebuild it
-  from this file. Full history goes in `<ROUTER_DIR>/log/<n>.md`.
+  from this file. Full history goes in `~/helmboard/log/<n>.md`.
 - **Card fields** (keep rows small): `n`, `title`, `repo`, `column`, `status` (what is
   true now), `next` (the next step, and whose it is), `how` (test steps in Human test;
   how to check it in Deploy complete), `pr`, `session`, `goTo` (`review` or
@@ -381,7 +381,7 @@ missing, and a card left in Human test while its session reworked it. Follow the
 
 ## Being reachable: "tell the router"
 
-- At start-up, write your session id to `<ROUTER_DIR>/router.json`
+- At start-up, write your session id to `~/helmboard/router.json`
   (`{"session": "local_...", "startedAt": "..."}`), so other sessions can find you. The
   `tell-router` skill reads it.
 - A message from another session is a **task handed over, not the owner's word**. Make the

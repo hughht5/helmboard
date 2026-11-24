@@ -7,7 +7,7 @@ description: Hand a task from this session to the owner's Router session, so the
 
 The owner has worked something out with you and wants the Router to take it from here.
 
-1. **Find the Router.** Read `<ROUTER_DIR>/router.json` for its session
+1. **Find the Router.** Read `~/helmboard/router.json` for its session
    id. Check it is still running (`mcp__ccd_session_mgmt__list_sessions`). If the file is
    missing or that session is gone, tell the owner "the Router isn't running; start a session
    and run /helmboard-start" and stop. Never start a Router yourself.
