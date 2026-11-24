@@ -90,3 +90,7 @@ Before a card goes to Human test, its session writes detail/full `steps` [{text}
   - `testVisuals`: diagrams or flows of what's being tested, as the plan widgets do, with uploaded images;
   - `beforeAfter` [{label, before:{url,text}, after:{url,text}}]: a before and an after screenshot or explanation for each change.
   The Router checks for all three before it sets testReady.
+
+- Helmboard is the only board: every session reads and writes its card on Helmboard (artifact BjzV42LssAnkcT6H9Edabi, ArtifactData: cards/<n>, cards/<n>/detail/full). Never the Claude Kanban DSH app, kb, kanban_* tools or Kangentic. Say so in every brief.
+
+- Human test stacks use --human-test: `dev-stack.sh up <branch> --human-test` builds once and runs the built server and a vite preview, with no `tsc -w`, nodemon or HMR (a fraction of the memory of a watch stack). Use it for every stack kept up for Human test; builders and testers keep the default watch mode. After a code change use `restart <branch> --human-test`.

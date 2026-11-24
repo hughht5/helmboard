@@ -595,6 +595,18 @@ section.over { outline: 3px solid var(--c); outline-offset: -3px; background: co
 .colmsg { font-size: .8rem; color: var(--stuck); overflow-wrap: anywhere; }
 .shipbtn { font: inherit; font-size: .72rem; font-weight: 600; margin-left: auto; color: var(--ship); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px; cursor: pointer; }
 .shipbtn:hover { border-color: var(--ship); }
+/* #1105 Human test stacks */
+.chip.live { background: var(--ship); border-color: var(--ship); color: var(--surface); font-weight: 600; }
+.card a.stacklink { color: var(--run); font-weight: 600; text-decoration: none; }
+.card a.stacklink:hover { text-decoration: underline; }
+.card a.stacklink:focus-visible, .stackbtn:focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+.stackbtn { font: inherit; font-size: .72rem; font-weight: 600; color: var(--run); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px; cursor: pointer; min-width: 9.5em; }
+.stackbtn:hover { border-color: var(--run); }
+.stackbtn[disabled] { cursor: default; color: var(--muted); border-style: dashed; }
+.stackdiv { display: flex; align-items: center; gap: 8px; margin: 6px 2px; font-size: .72rem; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.stackdiv::before, .stackdiv::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
+.stacklab { margin: 2px 2px -2px; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stackdiv span { text-align: center; max-width: 80%; overflow-wrap: anywhere; }
 .shipbtn.sure { background: var(--ship); border-color: var(--ship); color: var(--surface); }
 .top { display: flex; gap: 8px; align-items: baseline; }
 .num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .85rem; flex: none; }
@@ -1257,6 +1269,71 @@ function labels(meta, c) {
     if (days >= 0) meta.append(el("span", "chip" + (days >= 3 ? " bad" : ""), days === 0 ? "today" : days + "d waiting"));
   }
 }
+// #1105 Human test stacks. stackUp: true = a live stack (link in c.stack). stackWanted: ISO time the owner asked for one.
+// noStack: true (or a board / router repo) = nothing to bring up, so no divider logic and no button.
+const NO_STACK_REPOS = ["owner/helmboard", "owner/helmboard"];
+const stackLink = c => typeof c.stack === "string" && /^https?:\/\//.test(c.stack) ? c.stack : "";
+const needsStack = c => !(c.noStack === true || NO_STACK_REPOS.includes(c.repo)) || c.stackUp === true;
+const STACK_ASK = {}; // card id -> time this page asked (so the button flips at once, before the write echoes back)
+const STALE_MS = 3 * 60e3, STACK_T = {};
+function stackState(c) {
+  if (c.stackUp === true) return "up";
+  if (!needsStack(c)) return "none";
+  const t = Math.max(Date.parse(c.stackWanted || "") || 0, STACK_ASK[c.id] || 0);
+  if (!t) return "wait";
+  return Date.now() - t < STALE_MS ? "starting" : "slow";
+}
+function stackBits(c, meta) {
+  const st = stackState(c);
+  if (st === "none") return;
+  if (st === "up") {
+    const chip = el("span", "chip live", "Stack live"); chip.title = "A test stack is running for this card"; meta.append(chip);
+    const u = stackLink(c);
+    if (u) {
+      const a = el("a", "stacklink", "Open stack"); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = u; a.draggable = false;
+      ["click", "keydown", "pointerdown", "mousedown"].forEach(t => a.addEventListener(t, e => e.stopPropagation()));
+      a.addEventListener("dragstart", e => { e.preventDefault(); e.stopPropagation(); });
+      meta.append(a);
+    }
+    return;
+  }
+  const b = el("button", "stackbtn"); b.type = "button";
+  ["keydown", "pointerdown", "mousedown"].forEach(t => b.addEventListener(t, e => e.stopPropagation()));
+  if (st === "starting" && !STACK_T[c.id]) { const t = Math.max(Date.parse(c.stackWanted || "") || 0, STACK_ASK[c.id] || 0); STACK_T[c.id] = setTimeout(() => { delete STACK_T[c.id]; repaint(); }, Math.max(1000, t + STALE_MS - Date.now() + 500)); }
+  if (st === "starting") { b.textContent = "Starting…"; b.disabled = true; b.title = "Asked for a stack; the Router is starting it"; meta.append(b); return; }
+  b.textContent = st === "slow" ? "Ask again" : "Bring up stack";
+  b.title = st === "slow" ? "Asked over 3 minutes ago and no live stack: ask the Router again" : "Ask the Router to start a test stack for this card";
+  b.addEventListener("click", e => { e.stopPropagation(); wantStack(c); });
+  meta.append(b);
+}
+async function wantStack(c) {
+  const at = new Date().toISOString(), col = colOf(c);
+  STACK_ASK[c.id] = Date.now(); repaint();
+  let wrote = false;
+  try { if (DB) { await DB.doc("cards/" + c.id).update({ stackWanted: at }); wrote = true; } } catch (e) { wrote = false; }
+  // The message reaches a watching Router at once; the field is the record it also polls.
+  const m = el("span"); await ask(c, "bring up stack (stackWanted " + at + ").", m);
+  const sent = m.textContent.startsWith("Sent");
+  if (!wrote && !sent) { delete STACK_ASK[c.id]; repaint(); }
+  // The button itself says Starting…; the column note only speaks when something needs saying (keeps the cards still).
+  if (boxes[col] && sent) colSay(col, ""); // clear an earlier failure note
+  if (boxes[col] && !sent) { boxes[col].msg.classList.toggle("ok", wrote || sent); colSay(col, wrote || sent ? "Asked for a stack for #" + (c.n ?? c.id) + "." + (sent ? "" : " The Router picks it up at its next board check, within 15 minutes.") : "Couldn't ask for a stack for #" + (c.n ?? c.id) + ". " + m.textContent); }
+}
+function humanTestOrder(list) { const k = c => stackState(c) === "up" ? 0 : stackState(c) === "none" ? 1 : 2, ord = c => Number.isFinite(+c.stackOrder) && c.stackOrder !== "" && c.stackOrder != null ? +c.stackOrder : Infinity; return [...list].sort((a, b) => (k(a) - k(b)) || (ord(a) - ord(b)) || String(a.since || a.updatedAt || "").localeCompare(String(b.since || b.updatedAt || "")) || (a.n || 0) - (b.n || 0)); }
+// Human test: live stacks, then cards that need no stack, a divider, then cards waiting for one.
+function humanTestList(list) {
+  const up = list.filter(c => stackState(c) === "up"), none = list.filter(c => stackState(c) === "none"), wait = list.filter(c => !up.includes(c) && !none.includes(c));
+  const ord = c => Number.isFinite(+c.stackOrder) && c.stackOrder !== "" && c.stackOrder != null ? +c.stackOrder : Infinity;
+  const old = (a, b) => (ord(a) - ord(b)) || String(a.since || a.updatedAt || "").localeCompare(String(b.since || b.updatedAt || "")) || (a.n || 0) - (b.n || 0);
+  up.sort(old); wait.sort(old);
+  const div = t => { const d = el("div", "stackdiv"); d.setAttribute("role", "separator"); d.append(el("span", "", t)); return d; };
+  // the owner (24 Nov): live stacks, then no-stack cards under a small label, the divider, then cards waiting for a stack.
+  const lab = () => { const d = el("div", "stacklab", "No stack needed"); d.setAttribute("role", "heading"); d.setAttribute("aria-level", "3"); return d; };
+  const out = up.map(card);
+  if (none.length) out.push(...(up.length || wait.length ? [lab()] : []), ...none.map(card));
+  if (wait.length) out.push(div("Waiting for a stack: test from the screenshots, or bring one up"), ...wait.map(card));
+  return out;
+}
 function card(c) {
   const d = el("div", "card"); d.dataset.id = c.id; d.tabIndex = 0; d.setAttribute("role", "button");
   const top = el("div", "top"); top.append(el("span", "num", "#" + (c.n ?? c.id)), el("span", "title", c.title || "(no title)"));
@@ -1298,6 +1375,7 @@ function card(c) {
     b.addEventListener("keydown", e => e.stopPropagation());
     meta.append(b);
   }
+  if (!PENDING[c.id] && c.column === "Human test") stackBits(c, meta);
   if (c.column === FINAL) { const acts = actionsOf(c); if (acts.length) d.append(actionChips(c, acts)); }
   if (!PENDING[c.id] && ARCH_COLS.includes(c.column)) meta.append(tileArchive(c));
   d.addEventListener("click", () => { if (Date.now() - dragEnd > 400) openCard(c); });
@@ -2846,7 +2924,8 @@ function render(cards) {
     by[name].sort((a, b) => (order(a) - order(b)) || WEAK.has(a.id) - WEAK.has(b.id) || doneAt(b).localeCompare(doneAt(a)) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")) || (b.n || 0) - (a.n || 0));
     boxes[name].n.textContent = on ? by[name].length + " of " + total[name] : total[name];
     SHOWN[name] = by[name];
-    boxes[name].box.replaceChildren(...(by[name].length ? by[name].map(card) : [el("p", "empty", total[name] ? "No matches." : EMPTY[name] || "Empty.")]));
+    if (name === "Human test") SHOWN[name] = by[name] = humanTestOrder(by[name]);
+    boxes[name].box.replaceChildren(...(by[name].length ? (name === "Human test" ? humanTestList(by[name]) : by[name].map(card)) : [el("p", "empty", total[name] ? "No matches." : EMPTY[name] || "Empty.")]));
   }
   drawChips(cards); navCounts(cards);
   return shown;
