@@ -202,6 +202,20 @@ Everything is changed by asking. Tell the Router what you want and it edits the 
 
 </details>
 
+<details>
+<summary>Two repos: this one, and your own private board folder</summary>
+
+Helmboard keeps code and your data apart:
+
+- **This repo (public):** the skills, hooks and the board page. You never push to it. "Update Helmboard" pulls new versions from here.
+- **Your board folder (`~/helmboard`, or `HELMBOARD_DIR`): private, and yours alone.** Install makes it a local git repo. It holds your cards, `standing.md` (your standing rules), `handover.md`, lane queues, locks and `router.json`. Some of it names your clients, repos and people, so keep it out of any public repo, and never commit it into this one.
+- **Back it up to your own private repo** (recommended), so a lost laptop doesn't lose your board history:
+  `gh repo create <your-user>/helmboard-board --private --source ~/helmboard --push`
+  After that the Router commits there as it works; push when you like (`git -C ~/helmboard push`).
+- Someone else's board repo is theirs: don't clone it to start yours. Install gives you a fresh, empty board.
+
+</details>
+
 ## What Helmboard does on your machine
 
 <details>
