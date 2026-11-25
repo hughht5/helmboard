@@ -33,6 +33,8 @@ adds `re-queued after send-back` in the note. The old line's state becomes `was 
    Wait for the PR's checks; they are the test gate. A failed test or a red check that is the card's own: `sent back:
    <test or check, run link>`, then the next card. A known red that the Router has listed at
    the top of the queue file is not a reason to send back.
+   Before merging: if the card touches `server/`, `souls/`, `packages/shared-types/` or `frontends/`, confirm
+   `server/package.json` carries a version above main's. Without it `check-version` fails the Deploy red (#1076).
 5. Merge the PR (a merge commit, as the repo does). Mark it `merged <sha>`. Watch the
    Deploy workflow on that commit to the end. Green: mark it `live` and tell the Router.
    Red: follow "When a deploy or smoke test fails" below.
