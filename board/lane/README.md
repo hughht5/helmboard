@@ -27,8 +27,10 @@ adds `re-queued after send-back` in the note. The old line's state becomes `was 
 3. `git range-diff` old against new: the card's own product changes must be unchanged. If a
    conflict needs a judgement about behaviour, mark the card `sent back: <why>`, tell the
    Router, and go on to the next card. Never guess.
-4. Run the card's tests and the full unit list. Push the branch (`--force-with-lease`).
-   Wait for the PR's checks. A failed test or a red check that is the card's own: `sent back:
+4. Build and typecheck in WSL (your-app: commit and test in WSL, never Windows; never --no-verify).
+   Do NOT rerun the full unit list locally: the card's session ran it and
+   GitHub runs it on the PR, in parallel. Push the branch (`--force-with-lease`).
+   Wait for the PR's checks; they are the test gate. A failed test or a red check that is the card's own: `sent back:
    <test or check, run link>`, then the next card. A known red that the Router has listed at
    the top of the queue file is not a reason to send back.
 5. Merge the PR (a merge commit, as the repo does). Mark it `merged <sha>`. Watch the
